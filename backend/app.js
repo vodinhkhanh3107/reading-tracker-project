@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
+const bookRoutes = require("./routes/book.route");
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.get("/health", (req, res) => {
   });
 });
 
+app.use("/api/v1/books", bookRoutes);
 
 module.exports = app;
