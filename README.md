@@ -1,409 +1,502 @@
-# 📚 Mini Reading Tracker
+# 📚 Reading Tracker
 
-Ứng dụng web nhỏ giúp người dùng **tìm kiếm sách, lưu sách vào tủ sách cá nhân và theo dõi tiến độ đọc**.
+Reading Tracker là ứng dụng quản lý quá trình đọc sách cá nhân.
 
-Project được xây dựng theo yêu cầu của bài test Fullstack Mini Reading Tracker, sử dụng **Open Library API** làm nguồn dữ liệu sách và **MySQL** để lưu dữ liệu tủ sách.
+Ứng dụng cho phép người dùng tìm kiếm sách thông qua Open Library API, xem thông tin chi tiết của sách và quản lý các sách trong tủ sách cá nhân.
 
-> **Trạng thái:** Đang hoàn thiện  
-> **Demo:** [Frontend URL](https://...) · [Backend URL](https://...)  
-> **Repository:** [GitHub/GitLab URL](https://...)
+Các chức năng chính:
 
----
-
-## 1. 📖 Giới thiệu
-
-Mini Reading Tracker cung cấp các chức năng chính:
-
-- Tìm kiếm sách theo tên sách hoặc tác giả.
-- Xem thông tin chi tiết của một cuốn sách.
-- Thêm sách vào tủ sách cá nhân.
-- Chọn trạng thái đọc:
-  - Muốn đọc
-  - Đang đọc
-  - Đã đọc
-- Theo dõi tiến độ đọc theo số trang.
-- Tự động tính phần trăm tiến độ.
-- Đánh giá sách từ 1–5 sao.
-- Ghi chú ngắn cho từng cuốn sách.
-- Cập nhật trạng thái và số trang đang đọc.
-- Xóa sách khỏi tủ sách.
-- Thống kê tổng số sách, số sách đang đọc và số sách đã đọc.
-
-Ứng dụng không yêu cầu đăng nhập và được thiết kế cho một người dùng.
+* 🔎 Tìm kiếm sách.
+* 📖 Xem chi tiết sách.
+* 📚 Thêm sách vào tủ sách.
+* 📊 Theo dõi tiến độ đọc.
+* 🔄 Quản lý trạng thái đọc.
+* ⭐ Đánh giá sách.
+* 📝 Ghi chú cho sách.
+* 🗑️ Xóa sách khỏi tủ sách.
 
 ---
 
-## 2. ✨ Chức năng
+## 1. 🎯 Project Overview
 
-### 2.1. Tìm kiếm sách
+Reading Tracker được xây dựng theo mô hình Frontend - Backend - Database.
 
-- Tìm kiếm theo tên sách hoặc tác giả.
-- Hiển thị danh sách sách theo dạng grid/list.
-- Hiển thị:
-  - Ảnh bìa
-  - Tên sách
-  - Tác giả
-  - Năm xuất bản
-- Hỗ trợ phân trang.
-- Hiển thị trạng thái:
-  - Loading
-  - Không có kết quả
-  - Lỗi
-- Sách đã có trong tủ sẽ hiển thị trạng thái **"Đã thêm"**.
+Frontend chịu trách nhiệm hiển thị giao diện và tương tác với người dùng.
 
-### 2.2. Chi tiết sách
+Backend cung cấp REST API, xử lý business logic, giao tiếp với Open Library API và quản lý dữ liệu trong MySQL.
 
-Hiển thị:
-
-- Ảnh bìa
-- Tên sách
-- Tác giả
-- Mô tả
-- Số trang
-- Chủ đề
-- Năm xuất bản
-
-Người dùng có thể thêm sách vào tủ và lựa chọn trạng thái ban đầu:
-
-- Muốn đọc
-- Đang đọc
-- Đã đọc
-
-### 2.3. Tủ sách của tôi
-
-Tủ sách được chia thành 3 tab:
-
-- Muốn đọc
-- Đang đọc
-- Đã đọc
-
-Mỗi sách có thể:
-
-- Xem tiến độ đọc.
-- Cập nhật số trang đang đọc.
-- Thay đổi trạng thái.
-- Chấm điểm từ 1–5 sao.
-- Ghi chú.
-- Xóa khỏi tủ sách.
-
-Phía trên hiển thị thống kê nhanh:
-
-- Tổng số sách.
-- Số sách đang đọc.
-- Số sách đã đọc xong.
+Database sử dụng MySQL để lưu trữ thông tin sách và dữ liệu tủ sách.
 
 ---
 
-## 3. 🛠️ Công nghệ sử dụng
+## 2. ✨ Main Features
+
+### 2.1. Search Books
+
+Người dùng có thể tìm kiếm sách theo từ khóa.
+
+Frontend gửi request tới Backend:
+
+```text
+GET /api/v1/books/search?q={keyword}&page={page}&limit={limit}
+```
+
+Backend gọi Open Library API và chuẩn hóa dữ liệu trước khi trả về Frontend.
+
+---
+
+### 2.2. Book Detail
+
+Người dùng có thể xem thông tin chi tiết của một tác phẩm.
+
+```text
+GET /api/v1/books/{workId}
+```
+
+Thông tin có thể bao gồm:
+
+* Tên sách.
+* Tác giả.
+* Mô tả.
+* Ảnh bìa.
+* Thể loại/chủ đề.
+* Ngày xuất bản đầu tiên.
+* Số trang.
+
+---
+
+### 2.3. Shelf Book
+
+Người dùng có thể thêm sách vào tủ sách cá nhân và quản lý:
+
+* Trạng thái đọc.
+* Số trang hiện tại.
+* Rating.
+* Note.
+* Ngày bắt đầu đọc.
+* Ngày hoàn thành.
+
+Các trạng thái đọc:
+
+```text
+WANT_TO_READ
+READING
+COMPLETED
+```
+
+---
+
+## 3. 🛠️ Technologies
 
 ### Frontend
 
-- Vue.js
-- [Các thư viện frontend sử dụng trong project]
+* Vue.js
+* Vite
+* Axios
+* Các thư viện UI sử dụng trong project
 
 ### Backend
 
-- Node.js
-- Express.js
-- [Các thư viện backend sử dụng trong project]
+* Node.js
+* Express.js
+* TypeScript
+* tsx
+* Axios
+* CORS
+* dotenv
+
+### ORM
+
+* TypeORM
+
+TypeORM được sử dụng để:
+
+* Mapping Entity với database.
+* Thực hiện các thao tác CRUD.
+* Quản lý quan hệ giữa các bảng.
+* Hạn chế việc viết SQL trực tiếp trong business logic.
+* Tách database access khỏi Service Layer.
 
 ### Database
 
-- MySQL
+* MySQL
 
 ### External API
 
-- Open Library API
+* Open Library API
 
-Các API chính:
+Các API bên ngoài được sử dụng:
 
 ```text
 GET https://openlibrary.org/search.json?q={keyword}&page={n}&limit=20
+
 GET https://openlibrary.org/works/{workId}.json
+
 GET https://covers.openlibrary.org/b/id/{coverId}-M.jpg
 ```
 
-> Frontend không gọi trực tiếp Open Library. Các request tới Open Library được thực hiện thông qua backend.
-
-### Deployment
-
-- Frontend: [Vercel / Netlify / VPS / ...]
-- Backend: [Render / Railway / VPS / ...]
-- Database: [Railway / Aiven / VPS / ...]
-- HTTPS: [Đã cấu hình / Chưa cấu hình]
+Frontend **không gọi trực tiếp Open Library API**. Request được thực hiện thông qua Backend.
 
 ---
 
-## 4. 🖼️ Screenshots
+## 4. 🏗️ System Architecture
 
-### 4.1. Trang tìm kiếm sách
-
-![Search Books](./docs/screenshots/search-books.png)
-
-### 4.2. Chi tiết sách
-
-![Book Detail](./docs/screenshots/book-detail.png)
-
-### 4.3. Tủ sách
-
-![My Library](./docs/screenshots/my-library.png)
-
-> Thay các đường dẫn ảnh trên bằng screenshots thực tế của project.
-
----
-
-## 5. 🏗️ Kiến trúc hệ thống
-
-Project được tổ chức theo mô hình:
+Kiến trúc tổng quát:
 
 ```text
-┌──────────────────────┐
-│      Vue.js          │
-│      Frontend        │
-└──────────┬───────────┘
-           │ HTTP/REST API
-           ▼
-┌──────────────────────┐
-│   Node.js/Express    │
-│       Backend        │
-└───────┬────────┬─────┘
-        │        │
-        │        │ HTTP Request
-        │        ▼
+┌─────────────────────────┐
+│       Vue.js             │
+│       Frontend           │
+└────────────┬────────────┘
+             │
+             │ HTTP / REST API
+             ▼
+┌─────────────────────────┐
+│   Node.js + Express      │
+│       TypeScript         │
+├─────────────────────────┤
+│ Controllers              │
+│ Services                 │
+│ Repositories             │
+│ TypeORM Entities         │
+└───────┬─────────┬───────┘
+        │         │
+        │         │ HTTP Request
+        │         ▼
         │   ┌─────────────────┐
         │   │  Open Library   │
         │   │      API        │
         │   └─────────────────┘
         │
         ▼
-┌──────────────────────┐
-│        MySQL         │
-│  Reading Tracker DB  │
-└──────────────────────┘
+┌─────────────────────────┐
+│         MySQL            │
+│    Reading Tracker DB    │
+└─────────────────────────┘
 ```
 
-### Luồng xử lý chính
+### Backend Architecture
 
-1. Người dùng nhập từ khóa tìm kiếm trên Frontend.
-2. Frontend gửi request tới Backend.
-3. Backend gọi Open Library API.
-4. Backend xử lý/chuẩn hóa dữ liệu cần thiết.
-5. Backend trả dữ liệu về Frontend.
-6. Khi người dùng thêm sách vào tủ, Backend lưu dữ liệu vào MySQL.
-7. Các thao tác cập nhật tiến độ, trạng thái, đánh giá và ghi chú đều được xử lý thông qua Backend.
+Backend được tổ chức theo các layer:
 
----
-
-## 6. 🗄️ Database
-
-### Sơ đồ database
-
-![alt text]({BAC2B141-12A1-4B3F-9102-B206CE149F4C}.png)
-
-### Bảng chính
-
-#### `books`
-
-Lưu thông tin cơ bản của sách.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | BIGINT | ID nội bộ |
-| `work_id` | VARCHAR | ID tác phẩm từ Open Library |
-| `title` | VARCHAR | Tên sách |
-| `authors` | TEXT | Tác giả |
-| `cover_id` | BIGINT | ID ảnh bìa |
-| `description` | TEXT | Mô tả |
-| `page_count` | INT | Tổng số trang |
-| `first_publish_year` | INT | Năm xuất bản |
-
-#### `shelf_books`
-
-Lưu thông tin sách trong tủ sách và trạng thái đọc.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | BIGINT | ID |
-| `book_id` | BIGINT | ID sách |
-| `status` | VARCHAR | Trạng thái đọc |
-| `current_page` | INT | Số trang đã đọc |
-| `rating` | INT | Đánh giá 1–5 |
-| `note` | TEXT | Ghi chú |
-| `started_at` | DATETIME | Ngày bắt đầu đọc |
-| `finished_at` | DATETIME | Ngày đọc xong |
-| `created_at` | DATETIME | Ngày tạo |
-| `updated_at` | DATETIME | Ngày cập nhật |
-
-> Điều chỉnh tên bảng và field theo database thực tế của project nếu có khác biệt.
-
----
-
-## 7. 🔌 API
-
-### 7.1. Book Search
-
-```http
-GET /api/books/search?q={keyword}&page={page}&limit=20
+```text
+Request
+   ↓
+Route
+   ↓
+Controller
+   ↓
+Service
+   ↓
+Repository
+   ↓
+TypeORM
+   ↓
+MySQL
 ```
 
-Dùng để tìm kiếm sách thông qua Open Library.
+Trong đó:
 
-### 7.2. Book Detail
+### Route
 
-```http
-GET /api/books/:workId
-```
+Định nghĩa endpoint và chuyển request tới Controller.
 
-Lấy thông tin chi tiết của một tác phẩm.
+### Controller
 
-### 7.3. Get My Library
+* Nhận HTTP request.
+* Validate các input cơ bản.
+* Gọi Service.
+* Trả HTTP response.
 
-```http
-GET /api/library
-```
+### Service
 
-Lấy danh sách sách trong tủ sách.
-
-### 7.4. Add Book To Library
-
-```http
-POST /api/library
-```
-
-Thêm sách vào tủ.
+Chứa business logic của ứng dụng.
 
 Ví dụ:
 
-```json
-{
-  "workId": "OL...",
-  "status": "WANT_TO_READ"
-}
-```
+* Tìm kiếm sách.
+* Lấy thông tin sách từ Open Library.
+* Quản lý tủ sách.
+* Cập nhật tiến độ đọc.
 
-### 7.5. Update Reading Progress
+### Repository
 
-```http
-PATCH /api/library/:id/progress
-```
+Đảm nhiệm việc giao tiếp với database thông qua TypeORM.
 
-Ví dụ:
+### Entity
 
-```json
-{
-  "currentPage": 120
-}
-```
-
-### 7.6. Update Reading Status
-
-```http
-PATCH /api/library/:id/status
-```
+Định nghĩa mapping giữa TypeScript class và database table.
 
 Ví dụ:
 
-```json
-{
-  "status": "READING"
-}
+```text
+Book Entity
+    ↓
+books table
+
+ShelfBook Entity
+    ↓
+shelf_books table
 ```
-
-### 7.7. Update Rating / Note
-
-```http
-PATCH /api/library/:id/review
-```
-
-Ví dụ:
-
-```json
-{
-  "rating": 5,
-  "note": "Một cuốn sách đáng đọc."
-}
-```
-
-### 7.8. Remove From Library
-
-```http
-DELETE /api/library/:id
-```
-
-Xóa sách khỏi tủ sách.
-
-> Nếu project có Swagger hoặc Postman Collection, bổ sung link tại đây:
->
-> **Swagger:** [Swagger URL](https://...)
->
-> **Postman Collection:** [Postman URL](https://...)
 
 ---
 
-## 8. ⚙️ Business Rules
+## 5. 🗄️ Database Design
 
-### Không cho phép thêm sách trùng
+Database sử dụng MySQL.
 
-Nếu sách đã tồn tại trong tủ, API trả về:
-
-```http
-409 Conflict
-```
-
-### Validate số trang
+Các Entity chính:
 
 ```text
-currentPage >= 0
-currentPage <= totalPages
+Book
+ShelfBook
 ```
 
-### Rating
+### Book
 
-Rating phải là số nguyên từ:
+Lưu thông tin của tác phẩm lấy từ Open Library.
+
+Các thông tin chính:
 
 ```text
-1 → 5
+id
+workId
+title
+authors
+coverId
+coverUrl
+description
+subjects
+firstPublishDate
+numberOfPages
+createdAt
+updatedAt
 ```
 
-Hoặc có thể để trống.
+### ShelfBook
 
-### Tự động chuyển sang Đã đọc
+Lưu thông tin sách mà người dùng đang quản lý trong tủ sách.
 
-Khi:
+Các thông tin chính:
 
 ```text
-currentPage === totalPages
+id
+bookId
+status
+currentPage
+rating
+note
+startedAt
+finishedAt
+createdAt
+updatedAt
 ```
 
-hệ thống tự động chuyển trạng thái sách thành:
+### Relationship
 
 ```text
-Đã đọc
+Book
+ │
+ │ 1 : 1
+ │
+ ▼
+ShelfBook
 ```
 
-### Ngày bắt đầu và ngày hoàn thành
-
-- Khi sách chuyển sang **Đang đọc** lần đầu → lưu `started_at`.
-- Khi sách chuyển sang **Đã đọc** → lưu `finished_at`.
-
-### Backend Validation
-
-Dữ liệu đầu vào được validate tại Backend.
-
-Các lỗi trả về theo một format thống nhất, giúp Frontend có thể xử lý và hiển thị thông báo rõ ràng.
+> ERD chi tiết được đặt tại `docs/database/erd.png`.
 
 ---
 
-## 9. 🚀 Hướng dẫn chạy Local
+## 6. 🔄 Main Application Flow
 
-### 9.1. Requirements
+### Search Book
+
+```text
+User
+ │
+ ▼
+Frontend
+ │
+ │ GET /api/v1/books/search
+ ▼
+Book Route
+ │
+ ▼
+Book Controller
+ │
+ ▼
+Open Library Service
+ │
+ │ HTTP Request
+ ▼
+Open Library API
+ │
+ ▼
+Service xử lý dữ liệu
+ │
+ ▼
+Controller
+ │
+ ▼
+Frontend
+```
+
+---
+
+### Add Book To Shelf
+
+```text
+User
+ │
+ ▼
+Frontend
+ │
+ ▼
+Backend
+ │
+ ▼
+Controller
+ │
+ ▼
+Service
+ │
+ ▼
+Repository
+ │
+ ▼
+TypeORM
+ │
+ ▼
+MySQL
+```
+
+---
+
+### Update Reading Progress
+
+```text
+Frontend
+    │
+    ▼
+Controller
+    │
+    ▼
+ShelfBook Service
+    │
+    ▼
+ShelfBook Repository
+    │
+    ▼
+TypeORM
+    │
+    ▼
+MySQL
+```
+
+Khi số trang hiện tại đạt tổng số trang của sách, trạng thái có thể được cập nhật thành:
+
+```text
+COMPLETED
+```
+
+---
+
+## 7. 🌐 API
+
+### Book APIs
+
+#### Search Books
+
+```http
+GET /api/v1/books/search
+```
+
+Query parameters:
+
+```text
+q
+page
+limit
+```
+
+Example:
+
+```text
+GET /api/v1/books/search?q=harry&page=1&limit=20
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "total": 100,
+    "page": 1,
+    "limit": 20,
+    "books": []
+  }
+}
+```
+
+---
+
+#### Get Book Detail
+
+```http
+GET /api/v1/books/:workId
+```
+
+Example:
+
+```text
+GET /api/v1/books/OL45804W
+```
+
+---
+
+### Shelf Book APIs
+
+> Cập nhật danh sách endpoint thực tế sau khi hoàn thành toàn bộ Shelf Book API.
+
+Ví dụ:
+
+```http
+POST /api/v1/shelf-books
+GET /api/v1/shelf-books
+GET /api/v1/shelf-books/:id
+PATCH /api/v1/shelf-books/:id
+DELETE /api/v1/shelf-books/:id
+```
+
+---
+
+## 8. 📋 Business Rules
+
+Các business rules chính:
+
+1. Không cho phép thêm một sách trùng vào tủ sách.
+2. `currentPage` phải lớn hơn hoặc bằng `0`.
+3. `currentPage` không được lớn hơn tổng số trang của sách.
+4. Rating là số nguyên từ `1` đến `5` hoặc để trống.
+5. Khi số trang hiện tại bằng tổng số trang, trạng thái sách chuyển sang `COMPLETED`.
+6. Khi sách chuyển sang `READING` lần đầu, ghi nhận `startedAt`.
+7. Khi sách chuyển sang `COMPLETED`, ghi nhận `finishedAt`.
+8. Backend phải validate dữ liệu đầu vào.
+9. Các lỗi API được trả về theo format thống nhất.
+
+---
+
+# 9. 🚀 Local Development
+
+## 9.1. Requirements
 
 Cần cài đặt:
 
-- Node.js
-- npm
-- MySQL
-- Git
+* Node.js
+* npm
+* MySQL
+* Git
 
 Kiểm tra:
 
@@ -411,47 +504,119 @@ Kiểm tra:
 node -v
 npm -v
 mysql --version
-git --version
 ```
 
 ---
 
-### 9.2. Clone project
+## 9.2. Clone Project
 
 ```bash
 git clone <REPOSITORY_URL>
+
 cd <PROJECT_FOLDER>
 ```
 
 ---
 
-### 9.3. Setup Backend
+## 9.3. Setup Backend
 
 ```bash
 cd backend
+
 npm install
 ```
 
-Tạo file `.env`:
+Backend sử dụng TypeScript nên source code nằm trong:
+
+```text
+backend/
+└── src/
+    ├── controllers/
+    ├── services/
+    ├── repositories/
+    ├── entities/
+    ├── routes/
+    ├── config/
+    ├── app.ts
+    └── server.ts
+```
+
+---
+
+## 9.4. Environment Variables
+
+Tạo file:
+
+```text
+backend/.env
+```
+
+Ví dụ:
 
 ```env
 PORT=5000
 
 DB_HOST=localhost
 DB_PORT=3306
-DB_USERNAME=root
+DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=reading_tracker
 
 OPEN_LIBRARY_BASE_URL=https://openlibrary.org
 ```
 
-> Không commit file `.env` lên repository.
+Nếu MySQL sử dụng port khác, thay đổi:
 
-Chạy Backend:
+```env
+DB_PORT=3307
+```
+
+`DB_HOST` chỉ chứa host:
+
+```env
+DB_HOST=localhost
+```
+
+Không viết:
+
+```env
+DB_HOST=localhost:3307
+```
+
+---
+
+## 9.5. Setup MySQL
+
+Tạo database:
+
+```sql
+CREATE DATABASE reading_tracker;
+```
+
+Sau đó cấu hình thông tin database trong `.env`.
+
+TypeORM sử dụng các Entity để mapping với database.
+
+---
+
+## 9.6. Run Backend
+
+Development:
 
 ```bash
 npm run dev
+```
+
+Build TypeScript:
+
+```bash
+npm run build
+```
+
+Start production:
+
+```bash
+npm run start
 ```
 
 Backend mặc định:
@@ -460,48 +625,40 @@ Backend mặc định:
 http://localhost:5000
 ```
 
----
+Health check:
 
-### 9.4. Setup Database
-
-Tạo database MySQL:
-
-```sql
-CREATE DATABASE reading_tracker;
+```text
+GET http://localhost:5000/health
 ```
 
-Sau đó chạy migration/schema/seed theo cấu hình thực tế của project.
+Expected response:
 
-Nếu project sử dụng migration:
-
-```bash
-npm run migration:run
-```
-
-Nếu project có seed:
-
-```bash
-npm run seed
+```json
+{
+  "success": true,
+  "message": "Server is running"
+}
 ```
 
 ---
 
-### 9.5. Setup Frontend
+## 9.7. Setup Frontend
 
 Mở terminal mới:
 
 ```bash
 cd frontend
+
 npm install
 ```
 
-Tạo file `.env`:
+Tạo `.env`:
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-Chạy Frontend:
+Chạy:
 
 ```bash
 npm run dev
@@ -515,25 +672,119 @@ http://localhost:5173
 
 ---
 
-## 10. 🌐 Deployment
+# 10. 📦 TypeScript Configuration
 
-Project được deploy gồm 3 thành phần:
+Backend sử dụng TypeScript với ES Module.
 
-### Frontend
+Các cấu hình chính:
 
-**Platform:** `[Điền platform thực tế]`
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
 
-**URL:** `https://...`
+Project không sử dụng CommonJS.
 
-Các bước tổng quát:
+Code sử dụng:
 
-1. Build Frontend.
-2. Cấu hình biến môi trường API.
-3. Kết nối repository với nền tảng deploy.
-4. Deploy project.
-5. Kiểm tra Frontend gọi đúng Backend URL.
+```typescript
+import express from "express";
+```
 
-### Backend
+và:
+
+```typescript
+export default app;
+```
+
+Không sử dụng:
+
+```javascript
+require("express");
+```
+
+hoặc:
+
+```javascript
+module.exports = ...
+```
+
+---
+
+# 11. 🗃️ TypeORM
+
+TypeORM được sử dụng làm ORM cho MySQL.
+
+Ví dụ Entity:
+
+```typescript
+@Entity("books")
+export class Book {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({
+    name: "work_id",
+    type: "varchar",
+    length: 255,
+    unique: true,
+  })
+  workId!: string;
+
+  @Column({
+    type: "varchar",
+    length: 500,
+  })
+  title!: string;
+}
+```
+
+Database connection được cấu hình thông qua:
+
+```text
+src/config/database.ts
+```
+
+TypeORM DataSource đọc thông tin database từ environment variables.
+
+```text
+.env
+   ↓
+database.ts
+   ↓
+TypeORM DataSource
+   ↓
+MySQL
+```
+
+---
+
+# 12. 🌐 Deployment
+
+Project cần deploy đầy đủ:
+
+```text
+Frontend
+Backend
+Database
+```
+
+Ứng dụng production phải truy cập được thông qua HTTPS.
+
+Theo yêu cầu của bài test, README cần mô tả nền tảng deploy và các bước cấu hình.
+
+## 12.1. Frontend Deployment
 
 **Platform:** `[Điền platform thực tế]`
 
@@ -541,22 +792,175 @@ Các bước tổng quát:
 
 Các bước:
 
-1. Cấu hình Node.js environment.
-2. Cấu hình các biến môi trường.
-3. Cấu hình kết nối MySQL.
-4. Cấu hình Open Library Base URL.
-5. Deploy Backend.
-6. Kiểm tra API health/status.
+1. Push source code lên GitHub/GitLab.
+2. Kết nối repository với nền tảng deploy.
+3. Chọn thư mục `frontend` nếu project là monorepo.
+4. Cài dependencies:
 
-### Database
+```bash
+npm install
+```
+
+5. Build:
+
+```bash
+npm run build
+```
+
+6. Cấu hình Backend URL:
+
+```env
+VITE_API_URL=https://<BACKEND_URL>/api
+```
+
+7. Deploy Frontend.
+8. Truy cập URL production để kiểm tra.
+
+---
+
+## 12.2. Backend Deployment
 
 **Platform:** `[Điền platform thực tế]`
 
-Database credentials được lưu trong environment variables và không commit vào repository.
+**URL:** `https://...`
+
+Backend sử dụng:
+
+```text
+Node.js
+Express
+TypeScript
+TypeORM
+MySQL
+```
+
+### Build Backend
+
+Trước khi chạy production, compile TypeScript:
+
+```bash
+npm run build
+```
+
+Kết quả:
+
+```text
+src/
+   ↓
+TypeScript Compiler
+   ↓
+dist/
+```
+
+Sau đó chạy:
+
+```bash
+npm run start
+```
 
 ### Environment Variables
 
-Không commit:
+Cấu hình trên nền tảng deploy:
+
+```env
+PORT=5000
+
+DB_HOST=<DATABASE_HOST>
+DB_PORT=<DATABASE_PORT>
+DB_USER=<DATABASE_USER>
+DB_PASSWORD=<DATABASE_PASSWORD>
+DB_NAME=<DATABASE_NAME>
+
+OPEN_LIBRARY_BASE_URL=https://openlibrary.org
+```
+
+Không commit `.env` vào repository.
+
+---
+
+## 12.3. Database Deployment
+
+**Platform:** `[Điền platform thực tế]`
+
+Database sử dụng:
+
+```text
+MySQL
+```
+
+Cần cấu hình:
+
+```text
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+```
+
+Backend sử dụng TypeORM để kết nối tới MySQL.
+
+Database credentials phải được lưu trong environment variables.
+
+---
+
+## 12.4. Deployment Flow
+
+```text
+GitHub
+  │
+  ├───────────────┐
+  ▼               ▼
+Frontend        Backend
+  │               │
+  │               ├── TypeScript Build
+  │               │
+  │               ├── TypeORM
+  │               │
+  │               ▼
+  │             MySQL
+  │
+  ▼
+Production
+```
+
+Backend:
+
+```text
+Source Code
+    ↓
+npm install
+    ↓
+npm run build
+    ↓
+dist/
+    ↓
+npm run start
+```
+
+---
+
+## 12.5. Deployment Checklist
+
+Trước khi nộp project:
+
+* [ ] Frontend truy cập được bằng HTTPS.
+* [ ] Backend truy cập được bằng HTTPS.
+* [ ] Database production hoạt động.
+* [ ] Frontend gọi đúng Backend URL.
+* [ ] Backend kết nối được MySQL.
+* [ ] Backend gọi được Open Library API.
+* [ ] `/health` hoạt động.
+* [ ] Có dữ liệu mẫu.
+* [ ] `.env` không được commit.
+* [ ] Database credentials không xuất hiện trong source code.
+* [ ] Kiểm tra các API chính trên production.
+
+---
+
+# 13. 🔐 Environment Variables
+
+Không commit các file:
 
 ```text
 .env
@@ -566,91 +970,98 @@ Không commit:
 
 Các thông tin nhạy cảm như:
 
-- Database username
-- Database password
-- Database URL
-- API credentials nếu có
+* Database host.
+* Database username.
+* Database password.
+* Database URL.
+* API credentials nếu có.
 
-được cấu hình trực tiếp trên môi trường deploy.
+phải được cấu hình trực tiếp trên môi trường deploy.
 
 ---
 
-## 11. 🧪 Sample Data
+# 14. 🧪 Sample Data
 
-Project có dữ liệu mẫu để người chấm có thể kiểm tra ngay.
+Project cần có dữ liệu mẫu để có thể kiểm tra ngay sau khi deploy.
 
 Các trạng thái mẫu:
 
-- Muốn đọc
-- Đang đọc
-- Đã đọc
+```text
+WANT_TO_READ
+READING
+COMPLETED
+```
 
-Một số dữ liệu mẫu có thể dùng để kiểm tra:
+Một số trường hợp nên có trong dữ liệu test:
 
-- Cập nhật số trang.
-- Tự động chuyển trạng thái khi đọc hết.
-- Rating.
-- Note.
-- Xóa sách.
-- Lọc theo trạng thái.
-
-> Bổ sung thông tin tài khoản/seed data thực tế nếu project có sử dụng.
+* Sách chưa đọc.
+* Sách đang đọc.
+* Sách đã đọc.
+* Tiến độ đọc.
+* Rating.
+* Note.
 
 ---
 
-## 12. 📌 Assumptions
+# 15. ⚠️ Assumptions
 
 Một số giả định của project:
 
-1. Ứng dụng chỉ phục vụ một người dùng nên không triển khai authentication/authorization.
+1. Ứng dụng phục vụ một người dùng nên hiện tại chưa triển khai authentication/authorization.
 2. Open Library là nguồn dữ liệu sách chính.
 3. Dữ liệu tủ sách được lưu trong MySQL.
-4. Frontend chỉ giao tiếp với Backend, không gọi trực tiếp Open Library.
-5. `workId` của Open Library được sử dụng để xác định tác phẩm.
-6. Tiến độ đọc được tính dựa trên số trang hiện tại và tổng số trang.
-7. Khi người dùng đọc đến trang cuối cùng, sách được tự động chuyển sang trạng thái Đã đọc.
+4. Frontend không gọi trực tiếp Open Library.
+5. Backend chịu trách nhiệm giao tiếp với Open Library.
+6. `workId` được sử dụng để xác định tác phẩm từ Open Library.
+7. TypeORM được sử dụng để quản lý database thay cho việc viết SQL trực tiếp trong application code.
+8. Tiến độ đọc dựa trên số trang hiện tại và tổng số trang của sách.
 
 ---
 
-## 13. ⚠️ Limitations
+# 16. ⚠️ Limitations
 
 Một số hạn chế hiện tại:
 
-- Không có hệ thống tài khoản người dùng.
-- Không hỗ trợ nhiều người dùng.
-- Dữ liệu phụ thuộc vào chất lượng dữ liệu từ Open Library.
-- Một số sách có thể không có ảnh bìa.
-- Một số sách có thể không có số trang hoặc mô tả.
-- Chức năng tìm kiếm phụ thuộc vào khả năng tìm kiếm của Open Library.
-- [Bổ sung các hạn chế thực tế khác nếu có.]
+* Chưa có hệ thống tài khoản người dùng.
+* Chưa hỗ trợ nhiều người dùng.
+* Dữ liệu phụ thuộc vào Open Library.
+* Một số sách có thể không có ảnh bìa.
+* Một số sách có thể không có số trang.
+* Một số sách có thể không có mô tả.
+* Chất lượng kết quả tìm kiếm phụ thuộc vào Open Library.
+* Chưa có authentication/authorization.
+* Chưa có hệ thống caching cho Open Library API.
 
 ---
 
-## 14. 🔮 Future Improvements
+# 17. 🔮 Future Improvements
 
 Nếu có thêm thời gian, có thể phát triển:
 
-- Authentication và quản lý nhiều người dùng.
-- Đồng bộ dữ liệu tủ sách theo từng tài khoản.
-- Thêm tìm kiếm nâng cao theo thể loại, năm xuất bản, tác giả.
-- Thêm sorting theo tên, năm xuất bản hoặc tiến độ đọc.
-- Thêm biểu đồ thống kê lịch sử đọc.
-- Thêm mục tiêu đọc sách theo tháng/năm.
-- Thêm dark mode.
-- Tối ưu caching dữ liệu từ Open Library.
-- Thêm unit test và integration test.
-- Thêm CI/CD.
-- Bổ sung Swagger API documentation.
-- Tối ưu performance và UX trên mobile.
+* Authentication và authorization.
+* Quản lý nhiều người dùng.
+* Đồng bộ tủ sách theo từng tài khoản.
+* Tìm kiếm nâng cao.
+* Filter theo thể loại.
+* Filter theo tác giả.
+* Sorting theo tên, năm xuất bản hoặc tiến độ.
+* Thống kê lịch sử đọc.
+* Mục tiêu đọc sách theo tháng/năm.
+* Caching Open Library API.
+* Unit Test.
+* Integration Test.
+* CI/CD.
+* Swagger API documentation.
+* Tối ưu performance.
+* Responsive/mobile UX.
 
 ---
 
-## 15. 📁 Project Structure
-
-> Cập nhật lại structure theo repository thực tế.
+# 18. 📁 Project Structure
 
 ```text
 reading-tracker/
+│
 ├── frontend/
 │   ├── src/
 │   ├── public/
@@ -659,32 +1070,50 @@ reading-tracker/
 │
 ├── backend/
 │   ├── src/
+│   │   ├── config/
+│   │   │   └── database.ts
+│   │   │
 │   │   ├── controllers/
-│   │   ├── services/
+│   │   │
+│   │   ├── entities/
+│   │   │
 │   │   ├── repositories/
+│   │   │
 │   │   ├── routes/
-│   │   ├── middlewares/
-│   │   └── ...
+│   │   │
+│   │   ├── services/
+│   │   │
+│   │   ├── app.ts
+│   │   └── server.ts
+│   │
 │   ├── package.json
-│   └── ...
+│   ├── tsconfig.json
+│   └── .env
 │
 ├── docs/
 │   ├── screenshots/
 │   └── database/
+│       └── erd.png
 │
 └── README.md
 ```
 
----
-## 16. 📄 Notes
+# 19. 📄 Notes
 
-README này được xây dựng theo các yêu cầu của bài test Mini Reading Tracker:
+README này được xây dựng theo yêu cầu của bài test Mini Reading Tracker.
 
-- Giới thiệu và screenshots.
-- Công nghệ sử dụng.
-- Hướng dẫn chạy local.
-- Kiến trúc và database.
-- Danh sách API / Swagger / Postman.
-- Thông tin deployment.
-- Assumptions, limitations và future improvements.
+Các nội dung chính gồm:
+
+* Giới thiệu project.
+* Công nghệ sử dụng.
+* Hướng dẫn chạy local.
+* Kiến trúc hệ thống.
+* Database và ERD.
+* Danh sách API.
+* Hướng dẫn deployment.
+* Environment variables.
+* Sample data.
+* Assumptions.
+* Limitations.
+* Future improvements.
 
