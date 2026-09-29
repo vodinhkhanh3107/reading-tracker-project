@@ -21,6 +21,8 @@ export const AppDataSource = new DataSource({
 
   entities: [Book, ShelfBook],
 
+  migrations: ["src/migrations/*.ts"],
+
   synchronize: false,
 
   logging: false,
