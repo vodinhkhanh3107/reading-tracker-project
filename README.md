@@ -219,7 +219,7 @@ Lưu thông tin cơ bản của sách.
 | `page_count` | INT | Tổng số trang |
 | `first_publish_year` | INT | Năm xuất bản |
 
-#### `reading_books`
+#### `shelf_books`
 
 Lưu thông tin sách trong tủ sách và trạng thái đọc.
 
