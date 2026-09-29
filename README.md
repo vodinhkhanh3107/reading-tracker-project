@@ -198,9 +198,7 @@ Project được tổ chức theo mô hình:
 
 ### Sơ đồ database
 
-> Cập nhật ảnh ERD thực tế tại đây.
-
-![Database ERD](./docs/database/erd.png)
+![alt text]({BAC2B141-12A1-4B3F-9102-B206CE149F4C}.png)
 
 ### Bảng chính
 
