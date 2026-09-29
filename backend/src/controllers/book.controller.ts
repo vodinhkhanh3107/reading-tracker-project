@@ -1,10 +1,14 @@
-const openLibraryService = require("../services/open-library.service");
+import { Request, Response } from "express";
 
-const searchBooks = async (req, res) => {
+import * as openLibraryService from "../services/open-library.service";
+
+import axios from "axios";
+
+export const searchBooks = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { q, page = 1, limit = 20 } = req.query;
 
-    if (!q || !q.trim()) {
+    if (!q || !q.toString().trim()) {
       return res.status(400).json({
         success: false,
         message: "Keyword is required",
@@ -29,7 +33,7 @@ const searchBooks = async (req, res) => {
     }
 
     const data = await openLibraryService.searchBooks({
-      keyword: q.trim(),
+      keyword: q.toString().trim(),
       page: currentPage,
       limit: currentLimit,
     });
@@ -55,11 +59,11 @@ const searchBooks = async (req, res) => {
   }
 };
 
-const getBookDetail = async (req, res) => {
+export const getBookDetail = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { workId } = req.params;
 
-    if (!workId || !workId.trim()) {
+    if (!workId || !workId.toString().trim()) {
       return res.status(400).json({
         success: false,
         message: "Work ID is required",
@@ -67,7 +71,7 @@ const getBookDetail = async (req, res) => {
     }
 
     const book = await openLibraryService.getBookDetail(
-      workId.trim()
+      workId.toString().trim()
     );
 
     return res.status(200).json({
@@ -77,7 +81,8 @@ const getBookDetail = async (req, res) => {
   } catch (error) {
     console.error("Get book detail error:", error);
 
-    if (error.response?.status === 404) {
+    if (axios.isAxiosError(error) &&
+      error.response?.status === 404) {
       return res.status(404).json({
         success: false,
         message: "Book not found",
@@ -89,9 +94,4 @@ const getBookDetail = async (req, res) => {
       message: "Failed to get book detail",
     });
   }
-};
-
-module.exports = {
-  searchBooks,
-  getBookDetail
 };
