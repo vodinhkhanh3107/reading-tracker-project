@@ -303,7 +303,7 @@ Book
 ShelfBook
 ```
 
-> ERD chi tiết được đặt tại `docs/database/erd.png`.
+![alt text]({15A5F833-EC2C-41C8-BDA7-FBDE6817376C}.png)
 
 ---
 
