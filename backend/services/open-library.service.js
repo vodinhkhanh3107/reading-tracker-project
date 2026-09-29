@@ -30,6 +30,32 @@ const searchBooks = async ({ keyword, page, limit }) => {
   };
 };
 
+const getBookDetail = async (workId) => {
+  const response = await openLibraryApi.get(`/works/${workId}.json`);
+
+  const book = response.data;
+
+  console.log(book);
+
+  return {
+    workId: book.key?.replace("/works/", ""),
+    title: book.title,
+    description:
+      typeof book.description === "string"
+        ? book.description
+        : book.description?.value || null,
+
+    coverIds: book.covers || [],
+
+    subjects: book.subjects || [],
+
+    firstPublishDate: book.first_publish_date || null,
+
+    numberOfPages: book.number_of_pages || null,
+  };
+};
+
 module.exports = {
   searchBooks,
+  getBookDetail
 };

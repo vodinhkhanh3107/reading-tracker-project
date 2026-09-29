@@ -55,6 +55,43 @@ const searchBooks = async (req, res) => {
   }
 };
 
+const getBookDetail = async (req, res) => {
+  try {
+    const { workId } = req.params;
+
+    if (!workId || !workId.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Work ID is required",
+      });
+    }
+
+    const book = await openLibraryService.getBookDetail(
+      workId.trim()
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: book,
+    });
+  } catch (error) {
+    console.error("Get book detail error:", error);
+
+    if (error.response?.status === 404) {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to get book detail",
+    });
+  }
+};
+
 module.exports = {
   searchBooks,
+  getBookDetail
 };
