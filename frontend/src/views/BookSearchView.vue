@@ -1,9 +1,6 @@
 ```vue
 <script setup lang="ts">
-import {
-  onMounted,
-  ref,
-} from "vue";
+import { onMounted, ref } from "vue";
 
 import BookCard from "../components/book/BookCard.vue";
 
@@ -13,10 +10,7 @@ import AppEmpty from "../components/common/AppEmpty.vue";
 
 import type { Book } from "../types/book";
 
-import {
-  getBooks,
-  searchBooks,
-} from "../services/book.api.js";
+import { getBooks, searchBooks } from "../services/book.api.js";
 
 const keyword = ref("");
 
@@ -30,7 +24,7 @@ const total = ref(0);
 
 const page = ref(1);
 
-const limit = ref(20);
+const limit = ref(10);
 
 const showAddModal = ref(false);
 
@@ -51,18 +45,13 @@ const fetchAllBooks = async () => {
     books.value = result.books;
     total.value = result.total;
   } catch (err) {
-    console.error(
-      "Get books error:",
-      err,
-    );
+    console.error("Get books error:", err);
 
-    error.value =
-      "Unable to load books. Please try again.";
+    error.value = "Unable to load books. Please try again.";
   } finally {
     loading.value = false;
   }
 };
-
 
 const fetchSearchResults = async () => {
   try {
@@ -84,13 +73,9 @@ const fetchSearchResults = async () => {
     books.value = result.books;
     total.value = result.total;
   } catch (err) {
-    console.error(
-      "Search books error:",
-      err,
-    );
+    console.error("Search books error:", err);
 
-    error.value =
-      "Unable to search books. Please try again.";
+    error.value = "Unable to search books. Please try again.";
 
     books.value = [];
     total.value = 0;
@@ -99,10 +84,8 @@ const fetchSearchResults = async () => {
   }
 };
 
-
 const handleSearch = async () => {
-  const searchKeyword =
-    keyword.value.trim();
+  const searchKeyword = keyword.value.trim();
 
   if (!searchKeyword) {
     return;
@@ -125,10 +108,7 @@ const handleClearSearch = async () => {
   await fetchAllBooks();
 };
 
-
-const handlePageChange = async (
-  newPage: number,
-) => {
+const handlePageChange = async (newPage: number) => {
   page.value = newPage;
 
   if (isSearching.value) {
@@ -137,7 +117,6 @@ const handlePageChange = async (
     await fetchAllBooks();
   }
 };
-
 
 onMounted(() => {
   fetchAllBooks();
@@ -150,78 +129,65 @@ onMounted(() => {
     <div class="page-header">
       <div>
         <a-typography-title :level="2">
-          {{
-            isSearching
-              ? "Search Results"
-              : "All Books"
-          }}
+          {{ isSearching ? "Search Results" : "All Books" }}
         </a-typography-title>
 
-        <a-typography-paragraph
-          type="secondary"
-        >
-          Discover books and add them
-          to your personal library.
+        <a-typography-paragraph type="secondary">
+          Discover books and add them to your personal library.
         </a-typography-paragraph>
       </div>
     </div>
 
     <!-- Search -->
-    <a-card
-      class="search-card"
-      :bordered="false"
-    >
-      <a-input-search
-        v-model:value="keyword"
-        placeholder="Search books..."
-        enter-button="Search"
-        size="large"
-        :loading="loading"
-        @search="handleSearch"
-      />
+    <a-card class="search-card" :bordered="false">
+      <div class="search-container">
+        <a-input
+          v-model:value="keyword"
+          placeholder="Search books..."
+          size="large"
+          :disabled="loading"
+          @press-enter="handleSearch"
+        />
+        <a-button
+          type="primary"
+          size="large"
+          :loading="loading"
+          @click="handleSearch"
+        >
+          Search
+        </a-button>
+        <a-button
+          size="large"
+          :disabled="loading || !keyword"
+          @click="handleClearSearch"
+        >
+          Clear
+        </a-button>
+      </div>
     </a-card>
 
-
-    <AppLoading
-      v-if="loading"
-      message="Searching books..."
-    />
+    <AppLoading v-if="loading" message="Searching books..." />
 
     <AppError
       v-else-if="error"
       :message="error"
-      @retry="
-        isSearching
-          ? fetchSearchResults()
-          : fetchAllBooks()
-      "
+      @retry="isSearching ? fetchSearchResults() : fetchAllBooks()"
     />
-
 
     <template v-else>
       <!-- Result Header -->
       <div class="result-header">
         <a-typography-title :level="4">
-          {{
-            isSearching
-              ? "Search Results"
-              : "All Books"
-          }}
+          {{ isSearching ? "Search Results" : "All Books" }}
         </a-typography-title>
 
-        <span>
-          {{ total }} books
-        </span>
+        <span> {{ total }} books </span>
       </div>
 
       <!-- Empty -->
       <AppEmpty
         v-if="books.length === 0"
-        :message="
-          isSearching
-            ? 'No books found.'
-            : 'No books available.'
-        "
+        :message="isSearching ? 'No books found.' : 'No books available.'"
       />
 
       <!-- Books -->
@@ -235,9 +201,7 @@ onMounted(() => {
             :md="8"
             :lg="6"
           >
-            <BookCard
-              :book="book"
-            />
+            <BookCard :book="book" />
           </a-col>
         </a-row>
 
@@ -260,16 +224,8 @@ onMounted(() => {
       cancel-text="Cancel"
       centered
     >
-      <div
-        v-if="selectedBook"
-        class="modal-content"
-      >
-        <img
-          :src="
-            selectedBook.coverUrl || ''
-          "
-          :alt="selectedBook.title"
-        />
+      <div v-if="selectedBook" class="modal-content">
+        <img :src="selectedBook.coverUrl || ''" :alt="selectedBook.title" />
 
         <div>
           <h3>
@@ -277,36 +233,21 @@ onMounted(() => {
           </h3>
 
           <p>
-            {{
-              selectedBook.authors.join(
-                ", ",
-              )
-            }}
+            {{ selectedBook.authors.join(", ") }}
           </p>
         </div>
       </div>
 
       <a-divider />
 
-      <p>
-        Choose the initial reading
-        status:
-      </p>
+      <p>Choose the initial reading status:</p>
 
-      <a-radio-group
-        default-value="WANT_TO_READ"
-      >
-        <a-radio value="WANT_TO_READ">
-          Want to Read
-        </a-radio>
+      <a-radio-group default-value="WANT_TO_READ">
+        <a-radio value="WANT_TO_READ"> Want to Read </a-radio>
 
-        <a-radio value="READING">
-          Reading
-        </a-radio>
+        <a-radio value="READING"> Reading </a-radio>
 
-        <a-radio value="COMPLETED">
-          Completed
-        </a-radio>
+        <a-radio value="COMPLETED"> Completed </a-radio>
       </a-radio-group>
     </a-modal>
   </div>
@@ -326,6 +267,16 @@ onMounted(() => {
 
 .search-card {
   margin-bottom: 32px;
+}
+
+.search-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-container .ant-input {
+  flex: 1;
 }
 
 .result-header {
