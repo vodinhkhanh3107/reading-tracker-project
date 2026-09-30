@@ -1,53 +1,25 @@
 import { Request, Response } from "express";
 
-import * as openLibraryService from "../services/open-library.service";
+import { searchBooks } from "../usecases/book/search-book.usecase";
+import { getBookDetail } from "../usecases/book/get-book-detail.usecase";
 
-import axios from "axios";
 
-export const searchBooks = async (req: Request, res: Response): Promise<Response> => {
+export const search = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { q, page = 1, limit = 20 } = req.query;
 
-    if (!q || !q.toString().trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Keyword is required",
-      });
-    }
-
-    const currentPage = Number(page);
-    const currentLimit = Number(limit);
-
-    if (currentPage < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Page must be greater than or equal to 1",
-      });
-    }
-
-    if (currentLimit < 1 || currentLimit > 20) {
-      return res.status(400).json({
-        success: false,
-        message: "Limit must be between 1 and 20",
-      });
-    }
-
-    const data = await openLibraryService.searchBooks({
-      keyword: q.toString().trim(),
-      page: currentPage,
-      limit: currentLimit,
+    const result = await searchBooks({
+      keyword: q?.toString() || "",
+      page: Number(page),
+      limit: Number(limit),
     });
-
-    console.log("Data from Open Library API:", data);
 
     return res.status(200).json({
       success: true,
-      data: {
-        total: data.total,
-        page: currentPage,
-        limit: currentLimit,
-        books: data.books,
-      },
+      data: result,
     });
   } catch (error) {
     console.error(error);
@@ -59,36 +31,27 @@ export const searchBooks = async (req: Request, res: Response): Promise<Response
   }
 };
 
-export const getBookDetail = async (req: Request, res: Response): Promise<Response> => {
+export const detail = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { workId } = req.params;
-
-    if (!workId || !workId.toString().trim()) {
+  
+    if (typeof workId !== "string" || !workId.trim()) {
       return res.status(400).json({
         success: false,
         message: "Work ID is required",
       });
     }
 
-    const book = await openLibraryService.getBookDetail(
-      workId.toString().trim()
-    );
-
+    const bookDetail = await getBookDetail(workId);
     return res.status(200).json({
       success: true,
-      data: book,
+      data: bookDetail,
     });
   } catch (error) {
     console.error("Get book detail error:", error);
-
-    if (axios.isAxiosError(error) &&
-      error.response?.status === 404) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
-    }
-
     return res.status(500).json({
       success: false,
       message: "Failed to get book detail",
