@@ -1,9 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { router } from "./routes/index.route";
 
-import { bookRoutes } from "./routes/book.route";
-
-import { shelfBookRoutes } from "./routes/shelf-book.route";
 
 
 const app = express();
@@ -19,14 +17,7 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.use(
-  "/api/v1/books",
-  bookRoutes,
-);
+app.use("/api/v1", router);
 
-app.use(
-  "/api/v1/shelf-books",
-  shelfBookRoutes,
-);
 
 export default app;
