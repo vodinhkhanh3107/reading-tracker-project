@@ -1,96 +1,160 @@
+```vue
 <script setup lang="ts">
 import {
+  onMounted,
   ref,
-  computed,
 } from "vue";
 
-import {
-  SearchOutlined,
-} from "@ant-design/icons-vue";
+import BookCard from "../components/book/BookCard.vue";
 
-import {
-  fakeBooks,
-} from "../data/fake-books";
-
-import BookCard from "../components/books/BookCard.vue";
+import AppLoading from "../components/common/AppLoading.vue";
+import AppError from "../components/common/AppError.vue";
+import AppEmpty from "../components/common/AppEmpty.vue";
 
 import type { Book } from "../types/book";
 
+import {
+  getBooks,
+  searchBooks,
+} from "../services/book.api.js";
+
 const keyword = ref("");
 
-const currentPage = ref(1);
+const books = ref<Book[]>([]);
 
-const pageSize = 8;
+const loading = ref(false);
+
+const error = ref<string | null>(null);
+
+const total = ref(0);
+
+const page = ref(1);
+
+const limit = ref(20);
 
 const showAddModal = ref(false);
 
-const selectedBook = ref<Book | null>(
-  null,
-);
+const selectedBook = ref<Book | null>(null);
 
-const filteredBooks = computed(() => {
-  const value =
-    keyword.value
-      .trim()
-      .toLowerCase();
+const isSearching = ref(false);
 
-  if (!value) {
-    return fakeBooks;
+const fetchAllBooks = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+
+    const result = await getBooks({
+      page: page.value,
+      limit: limit.value,
+    });
+
+    books.value = result.books;
+    total.value = result.total;
+  } catch (err) {
+    console.error(
+      "Get books error:",
+      err,
+    );
+
+    error.value =
+      "Unable to load books. Please try again.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+const fetchSearchResults = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+
+    const [result] = await Promise.all([
+      searchBooks({
+        keyword: keyword.value.trim(),
+        page: page.value,
+        limit: limit.value,
+      }),
+
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 2000);
+      }),
+    ]);
+
+    books.value = result.books;
+    total.value = result.total;
+  } catch (err) {
+    console.error(
+      "Search books error:",
+      err,
+    );
+
+    error.value =
+      "Unable to search books. Please try again.";
+
+    books.value = [];
+    total.value = 0;
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+const handleSearch = async () => {
+  const searchKeyword =
+    keyword.value.trim();
+
+  if (!searchKeyword) {
+    return;
   }
 
-  return fakeBooks.filter(
-    (book) => {
-      const title =
-        book.title.toLowerCase();
+  page.value = 1;
 
-      const authors =
-        book.authors
-          .join(" ")
-          .toLowerCase();
+  isSearching.value = true;
 
-      return (
-        title.includes(value) ||
-        authors.includes(value)
-      );
-    },
-  );
-});
-
-const paginatedBooks = computed(() => {
-  const start =
-    (currentPage.value - 1) *
-    pageSize;
-
-  return filteredBooks.value.slice(
-    start,
-    start + pageSize,
-  );
-});
-
-const handleAdd = (book: Book) => {
-  selectedBook.value = book;
-
-  showAddModal.value = true;
+  await fetchSearchResults();
 };
 
-const handleDetail = (book: Book) => {
-  console.log(
-    "Open detail:",
-    book.workId,
-  );
+const handleClearSearch = async () => {
+  keyword.value = "";
+
+  isSearching.value = false;
+
+  page.value = 1;
+
+  await fetchAllBooks();
 };
+
+
+const handlePageChange = async (
+  newPage: number,
+) => {
+  page.value = newPage;
+
+  if (isSearching.value) {
+    await fetchSearchResults();
+  } else {
+    await fetchAllBooks();
+  }
+};
+
+
+onMounted(() => {
+  fetchAllBooks();
+});
 </script>
 
 <template>
   <div class="page">
-
+    <!-- Header -->
     <div class="page-header">
-
       <div>
-        <a-typography-title
-          :level="2"
-        >
-          Search Books
+        <a-typography-title :level="2">
+          {{
+            isSearching
+              ? "Search Results"
+              : "All Books"
+          }}
         </a-typography-title>
 
         <a-typography-paragraph
@@ -100,82 +164,94 @@ const handleDetail = (book: Book) => {
           to your personal library.
         </a-typography-paragraph>
       </div>
-
     </div>
 
+    <!-- Search -->
     <a-card
       class="search-card"
       :bordered="false"
     >
-
-      <a-input
+      <a-input-search
         v-model:value="keyword"
+        placeholder="Search books..."
+        enter-button="Search"
         size="large"
-        placeholder="Search by title or author..."
-        allow-clear
-      >
-
-        <template #prefix>
-          <SearchOutlined />
-        </template>
-
-      </a-input>
-
+        :loading="loading"
+        @search="handleSearch"
+      />
     </a-card>
 
-    <div class="result-header">
 
-      <a-typography-title
-        :level="4"
-      >
-        Search Results
-      </a-typography-title>
-
-      <span>
-        {{ filteredBooks.length }} books
-      </span>
-
-    </div>
-
-    <a-empty
-      v-if="filteredBooks.length === 0"
-      description="No books found"
+    <AppLoading
+      v-if="loading"
+      message="Searching books..."
     />
 
-    <a-row
-      v-else
-      :gutter="[20, 20]"
-    >
+    <AppError
+      v-else-if="error"
+      :message="error"
+      @retry="
+        isSearching
+          ? fetchSearchResults()
+          : fetchAllBooks()
+      "
+    />
 
-      <a-col
-        v-for="book in paginatedBooks"
-        :key="book.workId"
-        :xs="24"
-        :sm="12"
-        :md="8"
-        :lg="6"
-      >
 
-        <BookCard
-          :book="book"
-          @detail="handleDetail"
-          @add="handleAdd"
-        />
+    <template v-else>
+      <!-- Result Header -->
+      <div class="result-header">
+        <a-typography-title :level="4">
+          {{
+            isSearching
+              ? "Search Results"
+              : "All Books"
+          }}
+        </a-typography-title>
 
-      </a-col>
+        <span>
+          {{ total }} books
+        </span>
+      </div>
 
-    </a-row>
-
-    <div class="pagination">
-
-      <a-pagination
-        v-model:current="currentPage"
-        :page-size="pageSize"
-        :total="filteredBooks.length"
-        show-less-items
+      <!-- Empty -->
+      <AppEmpty
+        v-if="books.length === 0"
+        :message="
+          isSearching
+            ? 'No books found.'
+            : 'No books available.'
+        "
       />
 
-    </div>
+      <!-- Books -->
+      <template v-else>
+        <a-row :gutter="[20, 20]">
+          <a-col
+            v-for="book in books"
+            :key="book.workId"
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :lg="6"
+          >
+            <BookCard
+              :book="book"
+            />
+          </a-col>
+        </a-row>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <a-pagination
+            v-model:current="page"
+            :page-size="limit"
+            :total="total"
+            @change="handlePageChange"
+          />
+        </div>
+      </template>
+    </template>
 
     <a-modal
       v-model:open="showAddModal"
@@ -184,14 +260,14 @@ const handleDetail = (book: Book) => {
       cancel-text="Cancel"
       centered
     >
-
       <div
         v-if="selectedBook"
         class="modal-content"
       >
-
         <img
-          :src="selectedBook.coverUrl || ''"
+          :src="
+            selectedBook.coverUrl || ''
+          "
           :alt="selectedBook.title"
         />
 
@@ -201,10 +277,13 @@ const handleDetail = (book: Book) => {
           </h3>
 
           <p>
-            {{ selectedBook.authors.join(", ") }}
+            {{
+              selectedBook.authors.join(
+                ", ",
+              )
+            }}
           </p>
         </div>
-
       </div>
 
       <a-divider />
@@ -217,7 +296,6 @@ const handleDetail = (book: Book) => {
       <a-radio-group
         default-value="WANT_TO_READ"
       >
-
         <a-radio value="WANT_TO_READ">
           Want to Read
         </a-radio>
@@ -229,11 +307,8 @@ const handleDetail = (book: Book) => {
         <a-radio value="COMPLETED">
           Completed
         </a-radio>
-
       </a-radio-group>
-
     </a-modal>
-
   </div>
 </template>
 
@@ -257,7 +332,6 @@ const handleDetail = (book: Book) => {
   display: flex;
   align-items: center;
   gap: 12px;
-
   margin-bottom: 20px;
 }
 
@@ -268,7 +342,6 @@ const handleDetail = (book: Book) => {
 .pagination {
   display: flex;
   justify-content: center;
-
   margin: 40px 0;
 }
 
@@ -287,3 +360,4 @@ const handleDetail = (book: Book) => {
   margin-top: 0;
 }
 </style>
+```

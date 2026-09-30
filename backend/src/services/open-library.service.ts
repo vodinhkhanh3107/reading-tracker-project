@@ -68,6 +68,7 @@ export const searchBooks = async ({ keyword, page, limit }: SearchBooksParams) =
 
   const { numFound, docs } = response.data;
 
+
   const books = docs.map((book) => ({
     workId: book.key?.replace("/works/", ""),
     title: book.title,
@@ -86,8 +87,6 @@ export const getBookDetail = async (workId: string): Promise<BookDetailResult> =
   const response = await openLibraryApi.get<BookDetailResponse>(`/works/${workId}.json`);
 
   const book = response.data;
-
-  console.log(book);
 
   return {
     workId: book.key?.replace("/works/", "") ?? null,

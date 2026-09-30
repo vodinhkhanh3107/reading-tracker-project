@@ -1,4 +1,4 @@
-import * as openLibraryService from "../../services/open-library.service";
+import * as bookRepository from "../../repositories/book.repository";
 
 interface searchBooksParams {
   keyword: string;
@@ -23,11 +23,11 @@ export const searchBooks = async ({
     throw new Error("Limit must be between 1 and 20");
   }
 
-  const data = await openLibraryService.searchBooks({
-    keyword: keyword.trim(),
+  const data = await bookRepository.search(
+    keyword,
     page,
     limit,
-  });
+  );
   return {
     total: data.total,
     page,

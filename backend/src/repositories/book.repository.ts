@@ -15,6 +15,33 @@ export interface CreateBookData {
   numberOfPages: number | null;
 }
 
+export const search = async (
+  keyword: string,
+  page: number,
+  limit: number,
+): Promise<{
+  books: Book[];
+  total: number;
+}> => {
+  const [books, total] = await repository
+    .createQueryBuilder("book")
+    .where("book.title LIKE :keyword", {
+      keyword: `%${keyword}%`,
+    })
+    .orWhere("book.workId LIKE :keyword", {
+      keyword: `%${keyword}%`,
+    })
+    .orderBy("book.title", "ASC")
+    .skip((page - 1) * limit)
+    .take(limit)
+    .getManyAndCount();
+
+  return {
+    books,
+    total,
+  };
+};
+
 export const findById = async (
   id: number,
 ): Promise<Book | null> => {
@@ -39,15 +66,25 @@ export const findByWorkId = async (
   });
 };
 
-export const findAll = async (): Promise<Book[]> => {
-  return repository.find({
-    relations: {
-      shelfBook: true,
-    },
+export const findAll = async (
+  page: number,
+  limit: number,
+): Promise<{
+  books: Book[];
+  total: number;
+}> => {
+  const [books, total] = await repository.findAndCount({
     order: {
-      createdAt: "DESC",
+      title: "ASC",
     },
+    skip: (page - 1) * limit,
+    take: limit,
   });
+
+  return {
+    books,
+    total,
+  };
 };
 
 export const create = async (
