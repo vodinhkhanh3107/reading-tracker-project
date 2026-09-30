@@ -9,7 +9,7 @@ interface AddBookToShelfParams {
 
 export const addBookToShelfUsecase = async ({
   bookId,
-  status,
+  status=ReadingStatus.WANT_TO_READ,
 }: AddBookToShelfParams) => {
   if (!Number.isInteger(bookId) || bookId < 1) {
     throw new Error("Invalid book ID");
@@ -32,7 +32,12 @@ export const addBookToShelfUsecase = async ({
   }
 
   return shelfBookRepository.create({
-    bookId,
-    status,
+      book,
+      status,
+      currentPage: 0,
+      rating: null,
+      note: null,
+      startedAt: null,
+      finishedAt: null,
   });
 };

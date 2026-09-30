@@ -3,6 +3,8 @@ import { Request, Response } from "express";
 import { searchBooks } from "../usecases/book/search-book.usecase";
 import { getBookDetail } from "../usecases/book/get-book-detail.usecase";
 import { getBooksUseCase } from "../usecases/book/get-books.use-case";
+import { addBookToShelfUsecase } from "../usecases/shelf-book/add-book-to-shelf.usecase";
+import { ReadingStatus } from "../entities/ShelfBook";
 
 export const search = async (
   req: Request,
@@ -37,7 +39,7 @@ export const detail = async (
 ): Promise<Response> => {
   try {
     const { workId } = req.params;
-  
+
     if (typeof workId !== "string" || !workId.trim()) {
       return res.status(400).json({
         success: false,
@@ -64,22 +66,15 @@ export const getBooks = async (
   res: Response,
 ): Promise<Response> => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-    } = req.query;
+    const { page = 1, limit = 20 } = req.query;
 
     const currentPage = Number(page);
     const currentLimit = Number(limit);
 
-    if (
-      !Number.isInteger(currentPage) ||
-      currentPage < 1
-    ) {
+    if (!Number.isInteger(currentPage) || currentPage < 1) {
       return res.status(400).json({
         success: false,
-        message:
-          "Page must be greater than or equal to 1",
+        message: "Page must be greater than or equal to 1",
       });
     }
 
@@ -90,16 +85,14 @@ export const getBooks = async (
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "Limit must be between 1 and 20",
+        message: "Limit must be between 1 and 20",
       });
     }
 
-    const result =
-      await getBooksUseCase({
-        page: currentPage,
-        limit: currentLimit,
-      });
+    const result = await getBooksUseCase({
+      page: currentPage,
+      limit: currentLimit,
+    });
 
     return res.status(200).json({
       success: true,
@@ -111,14 +104,68 @@ export const getBooks = async (
       },
     });
   } catch (error) {
-    console.error(
-      "Get books error:",
-      error,
-    );
+    console.error("Get books error:", error);
 
     return res.status(500).json({
       success: false,
       message: "Failed to get books",
+    });
+  }
+};
+
+export const addBookToShelf = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const { bookId, status } = req.body;
+
+    // Validate bookId
+    if (!bookId || typeof bookId !== "string" || !bookId.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Book ID is required",
+      });
+    }
+
+    // Validate status
+    if (status && !Object.values(ReadingStatus).includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reading status",
+      });
+    }
+
+    const shelfBook = await addBookToShelfUsecase({
+      bookId: Number(bookId.trim()),
+      status,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Book added to shelf successfully",
+      data: shelfBook,
+    });
+  } catch (error) {
+    console.error("Add book to shelf error:", error);
+
+    if (error instanceof Error && error.message === "BOOK_NOT_FOUND") {
+      return res.status(404).json({
+        success: false,
+        message: "Book not found",
+      });
+    }
+
+    if (error instanceof Error && error.message === "BOOK_ALREADY_IN_SHELF") {
+      return res.status(409).json({
+        success: false,
+        message: "Book is already in your shelf",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add book to shelf",
     });
   }
 };

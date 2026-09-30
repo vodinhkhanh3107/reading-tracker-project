@@ -66,18 +66,8 @@ export const findByStatus = async (
   });
 };
 
-export const create = async (data: CreateShelfBookData): Promise<ShelfBook> => {
-  const shelfBook = repository.create({
-    book: {
-      id: data.bookId,
-    },
-    status: data.status ?? ReadingStatus.WANT_TO_READ,
-    currentPage: data.currentPage ?? 0,
-    rating: data.rating ?? null,
-    note: data.note ?? null,
-    startedAt: data.startedAt ?? null,
-    finishedAt: data.finishedAt ?? null,
-  });
+export const create = async (data: Partial<ShelfBook>): Promise<ShelfBook> => {
+  const shelfBook = repository.create(data);
 
   return repository.save(shelfBook);
 };

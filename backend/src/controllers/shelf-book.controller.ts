@@ -43,7 +43,6 @@ export const getShelfBooks = async (
 };
 
 
-
 export const addBookToShelf = async (
   req: Request,
   res: Response,
@@ -62,35 +61,45 @@ export const addBookToShelf = async (
 
     return res.status(201).json({
       success: true,
+      message: "Book added to shelf successfully",
       data: shelfBook,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Add book to shelf error:",
+      error,
+    );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to add book to shelf";
+    if (error instanceof Error) {
+      console.log("Error message:", error.message);
 
-    if (message === "Book not found") {
-      return res.status(404).json({
+      if (error.message === "Book not found") {
+        return res.json({
+          success: false,
+          message: "Book not found",
+        });
+      }
+
+      if (
+        error.message ===
+        "Book already exists in shelf"
+      ) {
+        return res.json({
+          success: false,
+          message:
+            "Book already exists in shelf",
+        });
+      }
+
+      return res.status(400).json({
         success: false,
-        message,
+        message: error.message,
       });
     }
 
-    if (
-      message === "Book already exists in shelf"
-    ) {
-      return res.status(409).json({
-        success: false,
-        message,
-      });
-    }
-
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message,
+      message: "Failed to add book to shelf",
     });
   }
 };
