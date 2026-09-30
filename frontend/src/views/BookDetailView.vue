@@ -1,144 +1,126 @@
 <script setup lang="ts">
-import {
-  computed,
-} from "vue";
-
-import {
-  useRoute,
-  useRouter,
-} from "vue-router";
-
-import {
-  fakeBooks,
-} from "../data/fake-books";
+import { useRoute, useRouter } from "vue-router";
+import type { Book } from "../types/book";
+import { onMounted, ref } from "vue";
+import { getBookDetail } from "../services/book.api";
+import AppLoading from "../components/common/AppLoading.vue";
 
 const route = useRoute();
 
 const router = useRouter();
 
-const book = computed(() => {
-  return fakeBooks.find(
-    (item) =>
-      item.workId ===
-      route.params.workId,
-  );
-});
+const book = ref<Book | null>(null);
 console.log("book", book);
+
+const loading = ref(false);
+
+const error = ref<string | null>(null);
+
+const fetchBookDetail = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+    const workId = route.params.workId;
+    if (typeof workId !== "string" || !workId.trim()) {
+      error.value = "Invalid book ID.";
+      return;
+    }
+    book.value = await getBookDetail(workId);
+  } catch (err) {
+    console.error("Get book detail error:", err);
+    error.value = "Unable to load book details.";
+  } finally {
+    loading.value = false;
+  }
+};
+const handleBack = () => {
+  router.back();
+};
+onMounted(() => {
+  fetchBookDetail();
+});
 </script>
 
 <template>
-  <div
-    v-if="book"
-    class="detail-page"
-  >
-
-    <a-button
-      type="text"
-      @click="router.back()"
-    >
-      ← Back
-    </a-button>
-
-    <a-card
-      class="detail-card"
-      :bordered="false"
-    >
-
-      <div class="detail-layout">
-
-        <div class="detail-cover">
-
-          <img
-            :src="book.coverUrl || ''"
-            :alt="book.title"
-          />
-
-        </div>
-
-        <div class="detail-info">
-
-          <a-typography-title
-            :level="1"
-          >
-            {{ book.title }}
-          </a-typography-title>
-
-          <a-typography-paragraph
-            type="secondary"
-          >
-            By
-            <strong>
-              {{ book.authors.join(", ") }}
-            </strong>
-          </a-typography-paragraph>
-
-          <div class="tags">
-
-            <a-tag>
-              {{ book.firstPublishDate }}
-            </a-tag>
-
-            <a-tag>
-              {{ book.numberOfPages }}
-              pages
-            </a-tag>
-
-          </div>
-
-          <a-divider />
-
-          <a-typography-title
-            :level="4"
-          >
-            Description
-          </a-typography-title>
-
-          <a-typography-paragraph>
-            {{ book.description }}
-          </a-typography-paragraph>
-
-          <a-typography-title
-            :level="4"
-          >
-            Subjects
-          </a-typography-title>
-
-          <a-space wrap>
-
-            <a-tag
-              v-for="subject in book.subjects"
-              :key="subject"
-            >
-              {{ subject }}
-            </a-tag>
-
-          </a-space>
-
-          <div class="detail-actions">
-
-            <a-button
-              type="primary"
-              size="large"
-            >
-              Add to Library
-            </a-button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </a-card>
-
+  <div class="book-detail-page">
+    <!-- Back -->
+    <div class="back-button">
+      <a-button type="text" @click="handleBack">
+        <ArrowLeftOutlined /> Back
+      </a-button>
+    </div>
+    <!-- Loading -->
+    <AppLoading v-if="loading" message="Loading book details..." />
+    <!-- Error -->
+    <AppError v-else-if="error" :message="error" @retry="fetchBookDetail" />
+    <!-- Book Detail -->
+    <template v-else-if="book">
+      <a-card class="book-detail-card" :bordered="false">
+        <a-row :gutter="[40, 40]">
+          <!-- Cover -->
+          <a-col :xs="24" :sm="8" :md="7" :lg="6">
+            <div class="cover-container">
+              <img
+                v-if="book.coverUrl"
+                :src="book.coverUrl"
+                :alt="book.title"
+                class="book-cover"
+              />
+              <div v-else class="no-cover">No Cover</div>
+            </div>
+          </a-col>
+          <!-- Information -->
+          <a-col :xs="24" :sm="16" :md="17" :lg="18">
+            <div class="book-info">
+              <a-typography-title :level="1">
+                {{ book.title }}
+              </a-typography-title>
+              <!-- Authors -->
+              <div class="book-field">
+                <strong> Authors: </strong>
+                <span> {{ book.authors?.join(", ") || "Unknown" }} </span>
+              </div>
+              <!-- Publish Date -->
+              <div v-if="book.firstPublishDate" class="book-field">
+                <strong> First published: </strong>
+                <span> {{ book.firstPublishDate }} </span>
+              </div>
+              <!-- Pages -->
+              <div v-if="book.numberOfPages" class="book-field">
+                <strong> Pages: </strong>
+                <span> {{ book.numberOfPages }} </span>
+              </div>
+              <!-- Subjects -->
+              <div v-if="book.subjects?.length" class="book-field">
+                <strong> Subjects: </strong>
+                <div class="subjects">
+                  <a-tag v-for="subject in book.subjects" :key="subject">
+                    {{ subject }}
+                  </a-tag>
+                </div>
+              </div>
+              <a-divider />
+              <!-- Description -->
+              <div v-if="book.description" class="description">
+                <a-typography-title :level="4">
+                  Description
+                </a-typography-title>
+                <a-typography-paragraph>
+                  {{ book.description }}
+                </a-typography-paragraph>
+              </div>
+              <!-- Action -->
+              <div class="actions">
+                <a-button type="primary" size="large">
+                  Add to Library
+                </a-button>
+              </div>
+            </div>
+          </a-col>
+        </a-row>
+      </a-card>
+    </template>
   </div>
-
-  <a-result
-    v-else
-    status="404"
-    title="Book not found"
-  />
-
 </template>
 
 <style scoped>
@@ -154,8 +136,7 @@ console.log("book", book);
 .detail-layout {
   display: grid;
 
-  grid-template-columns:
-    300px 1fr;
+  grid-template-columns: 300px 1fr;
 
   gap: 48px;
 }

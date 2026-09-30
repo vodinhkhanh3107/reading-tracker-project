@@ -1,14 +1,26 @@
 <script setup lang="ts">
+import { useRouter } from "vue-router";
 import type { Book } from "../../types/book";
 
-defineProps<{
+
+const props = defineProps<{
   book: Book;
 }>();
 
-const emit = defineEmits<{
-  detail: [book: Book];
-  add: [book: Book];
-}>();
+console.log(props.book);
+
+const router = useRouter();
+
+const handleViewDetail = () => {
+  router.push({
+    name: `book-detail`,
+    params: {
+      workId: props.book.workId,
+    },
+  });
+  
+};
+
 </script>
 
 <template>
@@ -72,18 +84,18 @@ const emit = defineEmits<{
 
       <a-button
         block
-        @click="emit('detail', book)"
+        @click="handleViewDetail"
       >
         View Detail
       </a-button>
 
-      <a-button
+      <!-- <a-button
         type="primary"
         block
         @click="emit('add', book)"
       >
         Add to Library
-      </a-button>
+      </a-button> -->
 
     </div>
 

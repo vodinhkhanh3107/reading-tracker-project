@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import { searchBooks } from "../usecases/book/search-book.usecase";
 import { getBookDetail } from "../usecases/book/get-book-detail.usecase";
 import { getBooksUseCase } from "../usecases/book/get-books.use-case";
-import { Book } from "../entities/Book";
 
 export const search = async (
   req: Request,
