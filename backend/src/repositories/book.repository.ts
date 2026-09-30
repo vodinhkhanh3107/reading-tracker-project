@@ -15,12 +15,37 @@ export interface CreateBookData {
   numberOfPages: number | null;
 }
 
+export const findById = async (
+  id: number,
+): Promise<Book | null> => {
+  return repository.findOne({
+    where: {
+      id,
+    },
+    relations: {
+      shelfBook: true,
+    },
+  });
+};
+
+
 export const findByWorkId = async (
   workId: string,
 ): Promise<Book | null> => {
   return repository.findOne({
     where: {
       workId,
+    },
+  });
+};
+
+export const findAll = async (): Promise<Book[]> => {
+  return repository.find({
+    relations: {
+      shelfBook: true,
+    },
+    order: {
+      createdAt: "DESC",
     },
   });
 };
@@ -40,4 +65,10 @@ export const update = async (
   repository.merge(book, data);
 
   return repository.save(book);
+};
+
+export const remove = async (
+  book: Book,
+): Promise<void> => {
+  await repository.remove(book);
 };

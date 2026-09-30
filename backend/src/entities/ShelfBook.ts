@@ -5,8 +5,8 @@ import {
   OneToOne,
   JoinColumn,
 } from "typeorm";
+import { Book } from "./Book";
 
-import { Book } from "./Book.js";
 
 export enum ReadingStatus {
   WANT_TO_READ = "WANT_TO_READ",

@@ -3,7 +3,7 @@ import cors from "cors";
 
 import { bookRoutes } from "./routes/book.route";
 
-// import shelfBookRoutes from "./routes/shelf-book.route";
+import { shelfBookRoutes } from "./routes/shelf-book.route";
 
 
 const app = express();
@@ -24,9 +24,9 @@ app.use(
   bookRoutes,
 );
 
-// app.use(
-//   "/api/v1/shelf-books",
-//   shelfBookRoutes,
-// );
+app.use(
+  "/api/v1/shelf-books",
+  shelfBookRoutes,
+);
 
 export default app;
