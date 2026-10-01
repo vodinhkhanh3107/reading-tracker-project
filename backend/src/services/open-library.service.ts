@@ -106,3 +106,41 @@ export const getBookDetail = async (workId: string): Promise<BookDetailResult> =
   };
 };
 
+interface OpenLibraryEdition {
+  number_of_pages?: number;
+}
+
+interface OpenLibraryEditionsResponse {
+  entries?: OpenLibraryEdition[];
+}
+
+export const getNumberOfPages = async (
+  workId: string,
+): Promise<number | null> => {
+  try {
+    const response =
+      await axios.get<OpenLibraryEditionsResponse>(
+        `https://openlibrary.org/works/${workId}/editions.json`,
+        {
+          params: {
+            limit: 20,
+          },
+        },
+      );
+
+    const edition = response.data.entries?.find(
+      (item) =>
+        Number.isInteger(item.number_of_pages) &&
+        item.number_of_pages! > 0,
+    );
+
+    return edition?.number_of_pages ?? null;
+  } catch (error) {
+    console.error(
+      `Failed to get editions for ${workId}:`,
+      error,
+    );
+
+    return null;
+  }
+};
