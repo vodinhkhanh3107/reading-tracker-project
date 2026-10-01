@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { bookRoutes } from "./routes/book.route";
-// import shelfBookRoutes from "./routes/shelf-book.route";
+import { router } from "./routes/index.route";
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -11,10 +10,6 @@ app.get("/health", (_req, res) => {
         message: "Server is running",
     });
 });
-app.use("/api/v1/books", bookRoutes);
-// app.use(
-//   "/api/v1/shelf-books",
-//   shelfBookRoutes,
-// );
+app.use("/api/v1", router);
 export default app;
 //# sourceMappingURL=app.js.map

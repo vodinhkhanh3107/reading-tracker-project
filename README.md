@@ -90,20 +90,20 @@ COMPLETED
 
 ### Frontend
 
-* Vue.js
+* Vue 3
+* TypeScript
 * Vite
+* Vue Router
+* Ant Design Vue
 * Axios
-* Các thư viện UI sử dụng trong project
 
 ### Backend
 
 * Node.js
 * Express.js
 * TypeScript
-* tsx
-* Axios
-* CORS
-* dotenv
+* TypeORM
+* Axios (gọi Open Library API, nếu đang được sử dụng trong service)
 
 ### ORM
 
@@ -459,13 +459,12 @@ GET /api/v1/books/OL45804W
 
 > Cập nhật danh sách endpoint thực tế sau khi hoàn thành toàn bộ Shelf Book API.
 
-Ví dụ:
-
 ```http
 POST /api/v1/shelf-books
 GET /api/v1/shelf-books
-GET /api/v1/shelf-books/:id
-PATCH /api/v1/shelf-books/:id
+PATCH /api/v1/shelf-books/:id/progress
+PATCH /api/v1/shelf-books/:id/rating
+PATCH /api/v1/shelf-books/:id/note
 DELETE /api/v1/shelf-books/:id
 ```
 
@@ -487,190 +486,67 @@ Các business rules chính:
 
 ---
 
-# 9. 🚀 Local Development
+# 9. 🚀 Local Development By Docker
+### 6.1. Yêu cầu
 
-## 9.1. Requirements
-
-Cần cài đặt:
-
-* Node.js
-* npm
-* MySQL
-* Git
+-   Git
+-   Docker Desktop (Windows/macOS) hoặc Docker Engine + Docker Compose
+    plugin (Linux)
+-   Docker đang chạy trước khi thực hiện các lệnh bên dưới
 
 Kiểm tra:
 
-```bash
-node -v
-npm -v
-mysql --version
+``` bash
+git --version
+docker --version
+docker compose version
 ```
 
----
+### 6.2. Clone repository
 
-## 9.2. Clone Project
+Thay `<REPOSITORY_URL>` bằng URL Git repository thực tế:
 
-```bash
+``` bash
 git clone <REPOSITORY_URL>
-
 cd <PROJECT_FOLDER>
 ```
 
----
+Chạy các lệnh tiếp theo tại thư mục gốc, nơi chứa `docker-compose.yml`.
 
-## 9.3. Setup Backend
+### 6.3. Tạo file `.env`
 
-```bash
-cd backend
+Tạo file `.env` từ file mẫu ở thư mục gốc.
 
-npm install
+**Windows PowerShell:**
+
+``` powershell
+Copy-Item .env.example .env
 ```
 
-Backend sử dụng TypeScript nên source code nằm trong:
+**macOS/Linux/Git Bash:**
 
-```text
-backend/
-└── src/
-    ├── controllers/
-    ├── services/
-    ├── repositories/
-    ├── entities/
-    ├── routes/
-    ├── config/
-    ├── app.ts
-    └── server.ts
+``` bash
+cp .env.example .env
 ```
 
----
+File `.env.example` cần có các biến sau:
 
-## 9.4. Environment Variables
-
-Tạo file:
-
-```text
-backend/.env
+``` dotenv
+MYSQL_ROOT_PASSWORD=change_this_root_password
+MYSQL_DATABASE=reading_tracker
+MYSQL_USER=reading_user
+MYSQL_PASSWORD=change_this_password
 ```
 
-Ví dụ:
+Có thể thay các giá trị mật khẩu trong `.env` bằng giá trị riêng. Không
+commit `.env` lên Git. Giữ file `.env.example` trong repository nhưng
+không đặt mật khẩu thật trong file này.
 
-```env
-PORT=5000
+Docker Compose dùng các biến trên để khởi tạo MySQL. Với volume database
+đã được khởi tạo từ trước, thay đổi các biến trong `.env` không tự đổi
+mật khẩu/tài khoản bên trong MySQL.
 
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=reading_tracker
 
-OPEN_LIBRARY_BASE_URL=https://openlibrary.org
-```
-
-Nếu MySQL sử dụng port khác, thay đổi:
-
-```env
-DB_PORT=3307
-```
-
-`DB_HOST` chỉ chứa host:
-
-```env
-DB_HOST=localhost
-```
-
-Không viết:
-
-```env
-DB_HOST=localhost:3307
-```
-
----
-
-## 9.5. Setup MySQL
-
-Tạo database:
-
-```sql
-CREATE DATABASE reading_tracker;
-```
-
-Sau đó cấu hình thông tin database trong `.env`.
-
-TypeORM sử dụng các Entity để mapping với database.
-
----
-
-## 9.6. Run Backend
-
-Development:
-
-```bash
-npm run dev
-```
-
-Build TypeScript:
-
-```bash
-npm run build
-```
-
-Start production:
-
-```bash
-npm run start
-```
-
-Backend mặc định:
-
-```text
-http://localhost:5000
-```
-
-Health check:
-
-```text
-GET http://localhost:5000/health
-```
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "message": "Server is running"
-}
-```
-
----
-
-## 9.7. Setup Frontend
-
-Mở terminal mới:
-
-```bash
-cd frontend
-
-npm install
-```
-
-Tạo `.env`:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-Chạy:
-
-```bash
-npm run dev
-```
-
-Frontend mặc định:
-
-```text
-http://localhost:5173
-```
-
----
 
 # 10. 📦 TypeScript Configuration
 
@@ -708,19 +584,7 @@ và:
 export default app;
 ```
 
-Không sử dụng:
 
-```javascript
-require("express");
-```
-
-hoặc:
-
-```javascript
-module.exports = ...
-```
-
----
 
 # 11. 🗃️ TypeORM
 
@@ -938,34 +802,15 @@ dist/
 npm run start
 ```
 
----
 
-## 12.5. Deployment Checklist
 
-Trước khi nộp project:
 
-* [ ] Frontend truy cập được bằng HTTPS.
-* [ ] Backend truy cập được bằng HTTPS.
-* [ ] Database production hoạt động.
-* [ ] Frontend gọi đúng Backend URL.
-* [ ] Backend kết nối được MySQL.
-* [ ] Backend gọi được Open Library API.
-* [ ] `/health` hoạt động.
-* [ ] Có dữ liệu mẫu.
-* [ ] `.env` không được commit.
-* [ ] Database credentials không xuất hiện trong source code.
-* [ ] Kiểm tra các API chính trên production.
+# 12. 🔐 Environment Variables
 
----
-
-# 13. 🔐 Environment Variables
-
-Không commit các file:
+Không commit file:
 
 ```text
 .env
-.env.local
-.env.production
 ```
 
 Các thông tin nhạy cảm như:
@@ -980,7 +825,7 @@ phải được cấu hình trực tiếp trên môi trường deploy.
 
 ---
 
-# 14. 🧪 Sample Data
+# 13. 🧪 Sample Data
 
 Project cần có dữ liệu mẫu để có thể kiểm tra ngay sau khi deploy.
 
@@ -1003,7 +848,7 @@ Một số trường hợp nên có trong dữ liệu test:
 
 ---
 
-# 15. ⚠️ Assumptions
+# 14. ⚠️ Assumptions
 
 Một số giả định của project:
 
@@ -1018,7 +863,7 @@ Một số giả định của project:
 
 ---
 
-# 16. ⚠️ Limitations
+# 15. ⚠️ Limitations
 
 Một số hạn chế hiện tại:
 
@@ -1034,7 +879,7 @@ Một số hạn chế hiện tại:
 
 ---
 
-# 17. 🔮 Future Improvements
+# 16. 🔮 Future Improvements
 
 Nếu có thêm thời gian, có thể phát triển:
 
@@ -1057,48 +902,43 @@ Nếu có thêm thời gian, có thể phát triển:
 
 ---
 
-# 18. 📁 Project Structure
+# 17. 📁 Project Structure
 
 ```text
 reading-tracker/
-│
 ├── frontend/
 │   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── ...
+│   │   ├── components/
+│   │   ├── data/
+│   │   ├── router/
+│   │   ├── services/
+│   │   ├── types/
+│   │   └── views/
+│   ├── .env.example
+│   └── package.json
 │
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── database.ts
-│   │   │
 │   │   ├── controllers/
-│   │   │
 │   │   ├── entities/
-│   │   │
+│   │   ├── middlewares/
 │   │   ├── repositories/
-│   │   │
 │   │   ├── routes/
-│   │   │
+│   │   ├── seeds/
 │   │   ├── services/
-│   │   │
-│   │   ├── app.ts
-│   │   └── server.ts
-│   │
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env
+│   │   └── usecases/
+│   ├── .env.example
+│   └── package.json
 │
 ├── docs/
 │   ├── screenshots/
 │   └── database/
-│       └── erd.png
 │
 └── README.md
 ```
 
-# 19. 📄 Notes
+# 18. 📄 Notes
 
 README này được xây dựng theo yêu cầu của bài test Mini Reading Tracker.
 

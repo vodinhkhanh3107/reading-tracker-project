@@ -1,6 +1,7 @@
 import express from "express";
 import * as bookController from "../controllers/book.controller";
 export const bookRoutes = express.Router();
-bookRoutes.get("/search", bookController.searchBooks);
-bookRoutes.get("/:workId", bookController.getBookDetail);
+bookRoutes.get("/", bookController.getBooks);
+bookRoutes.get("/search", bookController.search);
+bookRoutes.get("/:workId", bookController.detail);
 //# sourceMappingURL=book.route.js.map

@@ -8,7 +8,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, } from "typeorm";
-import { Book } from "./Book.js";
+import { Book } from "./Book";
 export var ReadingStatus;
 (function (ReadingStatus) {
     ReadingStatus["WANT_TO_READ"] = "WANT_TO_READ";

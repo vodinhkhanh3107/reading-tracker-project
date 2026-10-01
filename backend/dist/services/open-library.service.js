@@ -27,7 +27,6 @@ export const searchBooks = async ({ keyword, page, limit }) => {
 export const getBookDetail = async (workId) => {
     const response = await openLibraryApi.get(`/works/${workId}.json`);
     const book = response.data;
-    console.log(book);
     return {
         workId: book.key?.replace("/works/", "") ?? null,
         title: book.title ?? null,
@@ -39,5 +38,21 @@ export const getBookDetail = async (workId) => {
         firstPublishDate: book.first_publish_date || null,
         numberOfPages: book.number_of_pages || null,
     };
+};
+export const getNumberOfPages = async (workId) => {
+    try {
+        const response = await axios.get(`https://openlibrary.org/works/${workId}/editions.json`, {
+            params: {
+                limit: 20,
+            },
+        });
+        const edition = response.data.entries?.find((item) => Number.isInteger(item.number_of_pages) &&
+            item.number_of_pages > 0);
+        return edition?.number_of_pages ?? null;
+    }
+    catch (error) {
+        console.error(`Failed to get editions for ${workId}:`, error);
+        return null;
+    }
 };
 //# sourceMappingURL=open-library.service.js.map
