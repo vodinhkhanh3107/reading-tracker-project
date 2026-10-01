@@ -5,6 +5,7 @@ import { ReadingStatus } from "../entities/ShelfBook";
 import { updateProgressUseCase } from "../usecases/shelf-book/update-progress.usecase";
 import { updateRatingUseCase } from "../usecases/shelf-book/update-rating.usecase";
 import { updateNoteUseCase } from "../usecases/shelf-book/update-note.usecase";
+import { removeFromShelfUseCase } from "../usecases/shelf-book/remove-from-shelf.usecase";
 
 export const getShelfBooks = async (
   req: Request,
@@ -310,6 +311,49 @@ export const updateNote = async (
       success: false,
       message:
         "Failed to update book note",
+    });
+  }
+};
+
+export const removeFromShelf = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shelf book ID",
+      });
+    }
+
+    await removeFromShelfUseCase({ id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Book removed from shelf successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Remove book from shelf error:",
+      error,
+    );
+
+    if (
+      error instanceof Error &&
+      error.message === "SHELF_BOOK_NOT_FOUND"
+    ) {
+      return res.status(404).json({
+        success: false,
+        message: "Shelf book not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to remove book from shelf",
     });
   }
 };

@@ -12,11 +12,11 @@ const emit = defineEmits<{
   progress: [ShelfBook];
   rating: [ShelfBook];
   note: [ShelfBook];
+  remove: [ShelfBook];
 }>();
 
 const progress = computed(() => {
-  const totalPages =
-    props.shelfBook.book.numberOfPages;
+  const totalPages = props.shelfBook.book.numberOfPages;
 
   if (!totalPages || totalPages <= 0) {
     return 0;
@@ -24,11 +24,7 @@ const progress = computed(() => {
 
   return Math.min(
     100,
-    Math.round(
-      (props.shelfBook.currentPage /
-        totalPages) *
-        100,
-    ),
+    Math.round((props.shelfBook.currentPage / totalPages) * 100),
   );
 });
 
@@ -52,7 +48,6 @@ const statusLabel = computed(() => {
 <template>
   <a-card class="shelf-book-card">
     <div class="shelf-book-card__content">
-
       <div class="shelf-book-card__cover">
         <img
           :src="shelfBook.book.coverUrl || '/placeholder-book.png'"
@@ -61,7 +56,6 @@ const statusLabel = computed(() => {
       </div>
 
       <div class="shelf-book-card__info">
-
         <h3>
           {{ shelfBook.book.title }}
         </h3>
@@ -75,7 +69,6 @@ const statusLabel = computed(() => {
         </a-tag>
 
         <div class="progress-section">
-
           <div class="progress-header">
             <span>
               {{ shelfBook.currentPage }}
@@ -84,57 +77,36 @@ const statusLabel = computed(() => {
               pages
             </span>
 
-            <span>
-              {{ progress }}%
-            </span>
+            <span> {{ progress }}% </span>
           </div>
 
-          <a-progress
-            :percent="progress"
-            :show-info="false"
-          />
-
+          <a-progress :percent="progress" :show-info="false" />
         </div>
 
         <div class="rating-section">
           <span>Rating:</span>
 
-          <a-rate
-            :value="shelfBook.rating ?? 0"
-            disabled
-          />
+          <a-rate :value="shelfBook.rating ?? 0" disabled />
         </div>
 
-        <div
-          v-if="shelfBook.note"
-          class="note"
-        >
+        <div v-if="shelfBook.note" class="note">
           <strong>Note:</strong>
           {{ shelfBook.note }}
         </div>
 
         <div class="actions">
-
-          <a-button
-            @click="emit('progress', shelfBook)"
-          >
+          <a-button @click="emit('progress', shelfBook)">
             Update progress
           </a-button>
 
-          <a-button
-            @click="emit('rating', shelfBook)"
-          >
-            Rating
-          </a-button>
+          <a-button @click="emit('rating', shelfBook)"> Rating </a-button>
 
-          <a-button
-            @click="emit('note', shelfBook)"
-          >
-            Note
-          </a-button>
+          <a-button @click="emit('note', shelfBook)"> Note </a-button>
 
+          <a-button danger @click="emit('remove', shelfBook)">
+            Remove from Shelf
+          </a-button>
         </div>
-
       </div>
     </div>
   </a-card>

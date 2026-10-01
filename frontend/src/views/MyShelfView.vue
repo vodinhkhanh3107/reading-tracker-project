@@ -2,8 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 
 import type { ReadingStatus, ShelfBook } from "../types/shelf-book";
-import { getShelfBooks, updateNote, updateProgress, updateRating } from "../services/shelf-book.api";
-import { message } from "ant-design-vue";
+import { getShelfBooks, removeFromShelf, updateNote, updateProgress, updateRating } from "../services/shelf-book.api";
+import { message, Modal } from "ant-design-vue";
 import ShelfBookCard from "../components/shelf/ShelfBookCard.vue";
 import UpdateProgressModal from "../components/shelf/UpdateProgressModal.vue";
 import RatingModal from "../components/shelf/RatingModal.vue";
@@ -229,6 +229,43 @@ const handleUpdateNote = async (
   }
 };
 
+const handleRemoveFromShelf = (shelfBook: ShelfBook) => {
+  Modal.confirm({
+    title: "Remove book from shelf?",
+    content: `Are you sure you want to remove "${shelfBook.book.title}" from your shelf?`,
+    okText: "Remove",
+    cancelText: "Cancel",
+    okType: "danger",
+
+    async onOk() {
+      try {
+        actionLoading.value = true;
+
+        await removeFromShelf(shelfBook.id);
+
+        shelfBooks.value = shelfBooks.value.filter(
+          (item) => item.id !== shelfBook.id,
+        );
+
+        message.success(
+          "Book removed from your shelf successfully.",
+        );
+      } catch (error) {
+        console.error(
+          "Remove book from shelf error:",
+          error,
+        );
+
+        message.error(
+          "Failed to remove book from shelf.",
+        );
+      } finally {
+        actionLoading.value = false;
+      }
+    },
+  });
+};
+
 
 
 onMounted(() => fetchShelfBooks());
@@ -322,15 +359,10 @@ onMounted(() => fetchShelfBooks());
           v-for="shelfBook in filteredBooks"
           :key="shelfBook.id"
           :shelf-book="shelfBook"
-          @progress="
-            openProgressModal
-          "
-          @rating="
-            openRatingModal
-          "
-          @note="
-            openNoteModal
-          "
+          @progress="openProgressModal"
+          @rating="openRatingModal"
+          @note="openNoteModal"
+          @remove="handleRemoveFromShelf"
         />
 
       </div>

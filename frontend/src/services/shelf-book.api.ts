@@ -68,3 +68,11 @@ export const updateNote = async (
 
   return response.data.data;
 };
+
+export const removeFromShelf = async (
+  shelfBookId: number,
+): Promise<void> => {
+  await api.delete(
+    `/shelf-books/${shelfBookId}`,
+  );
+};
