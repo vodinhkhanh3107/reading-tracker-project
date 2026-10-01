@@ -1,22 +1,13 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import type { Book } from "../../types/book";
-import { ref } from "vue";
-import type { ReadingStatus } from "../../types/shelf-book";
-import { addBookToShelf } from "../../services/shelf-book.api";
-import { message } from "ant-design-vue";
+import AddToLibraryButton from "../shelf/AddToLibraryButton.vue";
 
 const props = defineProps<{
   book: Book;
 }>();
 
 const router = useRouter();
-
-
-const addingToShelf = ref(false);
-
-const selectedStatus =
-  ref<ReadingStatus>("WANT_TO_READ");
 
 const handleViewDetail = () => {
   router.push({
@@ -26,39 +17,6 @@ const handleViewDetail = () => {
     },
   });
   
-};
-
-
-const handleAddToShelf = async () => {
-  if (!props.book) {
-    return;
-  }
-
-  try {
-    addingToShelf.value = true;
-
-    const res = await addBookToShelf({
-      bookId: props.book.id,
-      status: selectedStatus.value,
-    });
-
-    console.log(res);
-
-    if(res.success) {
-      message.success(res.message);
-    }
-    else{
-      message.error(res.message);
-
-    }
-
-  } catch (err) {
-    message.error(
-      "Failed to add book to shelf.",
-    );
-  } finally {
-    addingToShelf.value = false;
-  }
 };
 
 </script>
@@ -129,14 +87,10 @@ const handleAddToShelf = async () => {
         View Detail
       </a-button>
 
-      <a-button
-        type="primary"
+      <AddToLibraryButton
+        :book="book"
         block
-        :loading="addingToShelf"
-        @click="handleAddToShelf"
-      >
-        Add to Library
-      </a-button>
+      />
 
     </div>
 

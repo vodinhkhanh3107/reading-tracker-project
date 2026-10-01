@@ -4,6 +4,7 @@ import type { Book } from "../types/book";
 import { onMounted, ref } from "vue";
 import { getBookDetail } from "../services/book.api";
 import AppLoading from "../components/common/AppLoading.vue";
+import AddToLibraryButton from "../components/shelf/AddToLibraryButton.vue";
 
 const route = useRoute();
 
@@ -110,11 +111,11 @@ onMounted(() => {
                 </a-typography-paragraph>
               </div>
               <!-- Action -->
-              <div class="actions">
-                <a-button type="primary" size="large">
-                  Add to Library
-                </a-button>
-              </div>
+              <AddToLibraryButton
+                :book="book"
+                block
+              />
+              
             </div>
           </a-col>
         </a-row>
