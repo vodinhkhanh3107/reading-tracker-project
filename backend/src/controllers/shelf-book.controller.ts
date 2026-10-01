@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getShelfBooksUsecase } from "../usecases/shelf-book/get-shelf-books.usecase";
 import { addBookToShelfUsecase } from "../usecases/shelf-book/add-book-to-shelf.usecase";
 import { ReadingStatus } from "../entities/ShelfBook";
+import { updateProgressUseCase } from "../usecases/shelf-book/update-progress.usecase";
 
 export const getShelfBooks = async (
   req: Request,
@@ -100,6 +101,85 @@ export const addBookToShelf = async (
     return res.status(500).json({
       success: false,
       message: "Failed to add book to shelf",
+    });
+  }
+};
+
+
+export const updateProgress = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shelf book ID",
+      });
+    }
+
+    const currentPage = Number(
+      req.body.currentPage,
+    );
+
+    if (
+      !Number.isInteger(currentPage)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Current page must be an integer",
+      });
+    }
+
+    const shelfBook =
+      await updateProgressUseCase({
+        id,
+        currentPage,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Reading progress updated successfully",
+      data: shelfBook,
+    });
+  } catch (error) {
+    console.error(
+      "Update progress error:",
+      error,
+    );
+
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "SHELF_BOOK_NOT_FOUND":
+          return res.status(404).json({
+            success: false,
+            message: "Shelf book not found",
+          });
+
+        case "INVALID_CURRENT_PAGE":
+          return res.status(400).json({
+            success: false,
+            message:
+              "Current page must be greater than or equal to 0",
+          });
+
+        case "CURRENT_PAGE_EXCEEDS_TOTAL_PAGES":
+          return res.status(400).json({
+            success: false,
+            message:
+              "Current page exceeds total pages",
+          });
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to update reading progress",
     });
   }
 };

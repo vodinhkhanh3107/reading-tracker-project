@@ -5,3 +5,7 @@ export const shelfBookRoutes = express.Router();
 
 shelfBookRoutes.get("/", ShelfBookController.getShelfBooks);
 shelfBookRoutes.post("/", ShelfBookController.addBookToShelf);
+shelfBookRoutes.patch("/:id/progress",ShelfBookController.updateProgress);
+
+
+

@@ -1,390 +1,224 @@
 <script setup lang="ts">
-import {
-  computed,
-  ref,
-} from "vue";
+import { computed, onMounted, ref } from "vue";
 
-import {
-  fakeShelfBooks,
-} from "../data/fake-books";
+import type { ReadingStatus, ShelfBook } from "../types/shelf-book";
+import { getShelfBooks, updateProgress } from "../services/shelf-book.api";
+import { message } from "ant-design-vue";
+import ShelfBookCard from "../components/shelf/ShelfBookCard.vue";
 
-import type {
-  ReadingStatus,
-} from "../types/shelf-book";
+const shelfBooks = ref<ShelfBook[]>([]);
 
-const activeStatus =
-  ref<"ALL" | ReadingStatus>(
-    "ALL",
-  );
+const loading = ref(false);
+const actionLoading = ref(false);
 
-const shelfBooks =
-  fakeShelfBooks;
+const activeStatus = ref<ReadingStatus | "ALL">("ALL");
 
-const filteredBooks =
-  computed(() => {
+const selectedShelfBook = ref<ShelfBook | null>(null);
 
-    if (
-      activeStatus.value ===
-      "ALL"
-    ) {
-      return shelfBooks;
-    }
+const progressModalOpen = ref(false);
 
-    return shelfBooks.filter(
-      (item) =>
-        item.status ===
-        activeStatus.value,
-    );
-  });
+const ratingModalOpen = ref(false);
 
-const getProgress = (
-  current: number,
-  total: number | null,
-) => {
-  if (!total) {
-    return 0;
+const noteModalOpen = ref(false);
+
+const fetchShelfBooks = async () => {
+  try {
+    loading.value = true;
+
+    const result = await getShelfBooks();
+    console.log(result)
+    shelfBooks.value = result;
+  } catch (error) {
+    console.error("Get shelf books error:", error);
+
+    message.error("Failed to load your shelf.");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const filteredBooks = computed(() => {
+  if (activeStatus.value === "ALL") {
+    return shelfBooks.value;
   }
 
-  return Math.min(
-    Math.round(
-      (current / total) * 100,
-    ),
-    100,
-  );
+  return shelfBooks.value.filter((item) => item.status === activeStatus.value);
+});
+
+const allCount = computed(() => shelfBooks.value.length);
+
+const wantToReadCount = computed(
+  () =>
+    shelfBooks.value.filter((item) => item.status === "WANT_TO_READ").length,
+);
+
+const readingCount = computed(
+  () => shelfBooks.value.filter((item) => item.status === "READING").length,
+);
+
+const completedCount = computed(
+  () => shelfBooks.value.filter((item) => item.status === "COMPLETED").length,
+);
+
+const openProgressModal = (shelfBook: ShelfBook) => {
+  selectedShelfBook.value = shelfBook;
+
+  progressModalOpen.value = true;
 };
 
-const getStatusLabel = (
-  status: ReadingStatus,
-) => {
-  const labels = {
-    WANT_TO_READ: "Want to Read",
-    READING: "Reading",
-    COMPLETED: "Completed",
-  };
+const closeProgressModal = () => {
+  progressModalOpen.value = false;
 
-  return labels[status];
+  selectedShelfBook.value = null;
 };
 
-const getStatusColor = (
-  status: ReadingStatus,
-) => {
-  const colors = {
-    WANT_TO_READ: "blue",
-    READING: "orange",
-    COMPLETED: "green",
-  };
+const handleUpdateProgress = async (currentPage: number) => {
+  if (!selectedShelfBook.value) {
+    return;
+  }
 
-  return colors[status];
+  try {
+    actionLoading.value = true;
+
+    const updated = await updateProgress(
+      selectedShelfBook.value.id,
+      currentPage,
+    );
+
+    const index = shelfBooks.value.findIndex((item) => item.id === updated.id);
+
+    if (index !== -1) {
+      shelfBooks.value[index] = updated;
+    }
+
+    message.success("Reading progress updated.");
+
+    closeProgressModal();
+  } catch (error) {
+    console.error("Update progress error:", error);
+
+    message.error("Failed to update reading progress.");
+  } finally {
+    actionLoading.value = false;
+  }
 };
+
+
+
+onMounted(() => fetchShelfBooks());
 </script>
 
 <template>
-  <div class="page">
-
-    <div class="page-header">
-
+  <div class="my-shelf">
+    <div class="my-shelf__header">
       <div>
+        <h1>My Library</h1>
 
-        <a-typography-title
-          :level="2"
-        >
-          My Library
-        </a-typography-title>
-
-        <a-typography-paragraph
-          type="secondary"
-        >
-          Track and manage your
-          reading journey.
-        </a-typography-paragraph>
-
+        <p>Track your reading journey</p>
       </div>
-
     </div>
 
-    <!-- Statistics -->
-
-    <a-row
-      :gutter="[16, 16]"
-      class="statistics"
-    >
-
-      <a-col
-        :xs="24"
-        :sm="12"
-        :lg="6"
+    <div class="status-tabs">
+      <a-button
+        :type="activeStatus === 'ALL' ? 'primary' : 'default'"
+        @click="activeStatus = 'ALL'"
       >
-        <a-card>
-          <a-statistic
-            title="Total Books"
-            :value="shelfBooks.length"
-          />
-        </a-card>
-      </a-col>
+        All ({{ allCount }})
+      </a-button>
 
-      <a-col
-        :xs="24"
-        :sm="12"
-        :lg="6"
+      <a-button
+        :type="activeStatus === 'WANT_TO_READ' ? 'primary' : 'default'"
+        @click="activeStatus = 'WANT_TO_READ'"
       >
-        <a-card>
-          <a-statistic
-            title="Want to Read"
-            :value="
-              shelfBooks.filter(
-                (b) =>
-                  b.status ===
-                  'WANT_TO_READ',
-              ).length
-            "
-          />
-        </a-card>
-      </a-col>
+        Want to Read ({{ wantToReadCount }})
+      </a-button>
 
-      <a-col
-        :xs="24"
-        :sm="12"
-        :lg="6"
+      <a-button
+        :type="activeStatus === 'READING' ? 'primary' : 'default'"
+        @click="activeStatus = 'READING'"
       >
-        <a-card>
-          <a-statistic
-            title="Reading"
-            :value="
-              shelfBooks.filter(
-                (b) =>
-                  b.status ===
-                  'READING',
-              ).length
-            "
-          />
-        </a-card>
-      </a-col>
+        Reading ({{ readingCount }})
+      </a-button>
 
-      <a-col
-        :xs="24"
-        :sm="12"
-        :lg="6"
+      <a-button
+        :type="activeStatus === 'COMPLETED' ? 'primary' : 'default'"
+        @click="activeStatus = 'COMPLETED'"
       >
-        <a-card>
-          <a-statistic
-            title="Completed"
-            :value="
-              shelfBooks.filter(
-                (b) =>
-                  b.status ===
-                  'COMPLETED',
-              ).length
-            "
-          />
-        </a-card>
-      </a-col>
+        Completed ({{ completedCount }})
+      </a-button>
+    </div>
 
-    </a-row>
+    
 
-    <!-- Tabs -->
-
-    <a-card
-      :bordered="false"
-      class="library-card"
-    >
-
-      <a-tabs
-        v-model:active-key="
-          activeStatus
-        "
-      >
-
-        <a-tab-pane
-          key="ALL"
-          tab="All Books"
+    <a-spin :spinning="loading">
+      <div v-if="filteredBooks.length" class="shelf-list">
+        <ShelfBookCard
+          v-for="shelfBook in filteredBooks"
+          :key="shelfBook.id"
+          :shelf-book="shelfBook"
+          @progress="openProgressModal"
+          
         />
+      </div>
 
-        <a-tab-pane
-          key="WANT_TO_READ"
-          tab="Want to Read"
-        />
+      <a-empty v-else description="Your shelf is empty" />
+    </a-spin>
 
-        <a-tab-pane
-          key="READING"
-          tab="Reading"
-        />
+    <UpdateProgressModal
+      :open="progressModalOpen"
+      :shelf-book="selectedShelfBook"
+      :loading="actionLoading"
+      @close="closeProgressModal"
+      @submit="handleUpdateProgress"
+    />
 
-        <a-tab-pane
-          key="COMPLETED"
-          tab="Completed"
-        />
+    <RatingModal
+      :open="ratingModalOpen"
+      :shelf-book="selectedShelfBook"
+      :loading="actionLoading"
+      @close="ratingModalOpen = false"
+    />
 
-      </a-tabs>
-
-      <a-row
-        :gutter="[20, 20]"
-      >
-
-        <a-col
-          v-for="item in filteredBooks"
-          :key="item.id"
-          :xs="24"
-          :sm="12"
-          :lg="8"
-        >
-
-          <a-card>
-
-            <div class="shelf-book">
-
-              <img
-                :src="
-                  item.book.coverUrl ||
-                  ''
-                "
-                :alt="item.book.title"
-              />
-
-              <div class="shelf-info">
-
-                <a-typography-title
-                  :level="5"
-                  :ellipsis="{
-                    rows: 2,
-                  }"
-                >
-                  {{ item.book.title }}
-                </a-typography-title>
-
-                <a-tag
-                  :color="
-                    getStatusColor(
-                      item.status,
-                    )
-                  "
-                >
-                  {{
-                    getStatusLabel(
-                      item.status,
-                    )
-                  }}
-                </a-tag>
-
-                <div
-                  v-if="
-                    item.status ===
-                    'READING'
-                  "
-                  class="progress"
-                >
-
-                  <a-progress
-                    :percent="
-                      getProgress(
-                        item.currentPage,
-                        item.book.numberOfPages,
-                      )
-                    "
-                  />
-
-                  <span>
-                    {{ item.currentPage }}
-                    /
-                    {{
-                      item.book
-                        .numberOfPages
-                    }}
-                    pages
-                  </span>
-
-                </div>
-
-                <div
-                  v-if="
-                    item.rating
-                  "
-                  class="rating"
-                >
-                  <a-rate
-                    :value="
-                      item.rating
-                    "
-                    disabled
-                  />
-                </div>
-
-                <a-button
-                  block
-                  style="
-                    margin-top: 16px;
-                  "
-                >
-                  View Details
-                </a-button>
-
-              </div>
-
-            </div>
-
-          </a-card>
-
-        </a-col>
-
-      </a-row>
-
-    </a-card>
-
+    <NoteModal
+      :open="noteModalOpen"
+      :shelf-book="selectedShelfBook"
+      :loading="actionLoading"
+      @close="noteModalOpen = false"
+    />
   </div>
 </template>
 
 <style scoped>
-.page {
-  max-width: 1400px;
+.my-shelf {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 32px 24px;
 }
 
-.statistics {
+.my-shelf__header {
   margin-bottom: 24px;
 }
 
-.library-card {
-  margin-top: 24px;
+.my-shelf__header h1 {
+  margin-bottom: 4px;
+  font-size: 32px;
 }
 
-.shelf-book {
+.my-shelf__header p {
+  margin: 0;
+  color: #888;
+}
+
+.status-tabs {
   display: flex;
-  gap: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
-.shelf-book img {
-  width: 130px;
-  height: 190px;
-
-  object-fit: cover;
-
-  border-radius: 6px;
-}
-
-.shelf-info {
-  flex: 1;
-}
-
-.progress {
-  margin-top: 16px;
-}
-
-.progress span {
-  color: #777;
-  font-size: 13px;
-}
-
-.rating {
-  margin-top: 12px;
-}
-
-@media (max-width: 600px) {
-  .shelf-book {
-    flex-direction: column;
-  }
-
-  .shelf-book img {
-    width: 100%;
-    height: 280px;
-  }
+.shelf-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 </style>

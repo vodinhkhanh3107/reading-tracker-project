@@ -13,6 +13,16 @@ export interface CreateShelfBookData {
   finishedAt?: Date | null;
 }
 
+
+export interface UpdateShelfBookData {
+  status?: ReadingStatus;
+  currentPage?: number;
+  rating?: number | null;
+  note?: string | null;
+  startedAt?: Date | null;
+  finishedAt?: Date | null;
+}
+
 export const findById = async (id: number): Promise<ShelfBook | null> => {
   return repository.findOne({
     where: {
@@ -84,3 +94,5 @@ export const update = async (
 export const remove = async (shelfBook: ShelfBook): Promise<void> => {
   await repository.remove(shelfBook);
 };
+
+
