@@ -5,7 +5,13 @@ import AddToLibraryButton from "../shelf/AddToLibraryButton.vue";
 
 const props = defineProps<{
   book: Book;
+  isAddedToShelf?: boolean;
 }>();
+
+const emit = defineEmits<{
+  added: [number];
+}>();
+
 
 const router = useRouter();
 
@@ -19,6 +25,7 @@ const handleViewDetail = () => {
   
 };
 
+
 </script>
 
 <template>
@@ -28,9 +35,15 @@ const handleViewDetail = () => {
   >
 
     <template #cover>
-
+      
       <div class="cover">
-
+        <a-tag
+          v-if="isAddedToShelf"
+          color="green"
+          class="added-badge"
+        >
+          Added
+        </a-tag>
         <img
           v-if="book.coverUrl"
           :src="book.coverUrl"
@@ -90,6 +103,7 @@ const handleViewDetail = () => {
       <AddToLibraryButton
         :book="book"
         block
+        @success="emit('added', book.id)"
       />
 
     </div>
@@ -102,9 +116,32 @@ const handleViewDetail = () => {
   height: 100%;
 }
 
+
+
 .cover {
   height: 280px;
   background: #f0f2f5;
+  position: relative;
+}
+
+
+.added-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  margin: 0;
+  padding: 4px 10px;
+
+  background: #1677ff;
+  border: none;
+  border-radius: 6px;
+
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .cover img {

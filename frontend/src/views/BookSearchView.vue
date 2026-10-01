@@ -1,6 +1,6 @@
 ```vue
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 
 import BookCard from "../components/book/BookCard.vue";
 
@@ -11,6 +11,8 @@ import AppEmpty from "../components/common/AppEmpty.vue";
 import type { Book } from "../types/book";
 
 import { getBooks, searchBooks } from "../services/book.api.js";
+import type { ShelfBook } from "../types/shelf-book.ts";
+import { getShelfBooks } from "../services/shelf-book.api.ts";
 
 const keyword = ref("");
 
@@ -31,6 +33,16 @@ const showAddModal = ref(false);
 const selectedBook = ref<Book | null>(null);
 
 const isSearching = ref(false);
+
+const shelfBooks = ref<ShelfBook[]>([]);
+
+const fetchShelfBooks = async () => {
+  try {
+    shelfBooks.value = await getShelfBooks();
+  } catch (error) {
+    console.error("Get shelf books error:", error);
+  }
+};
 
 const fetchAllBooks = async () => {
   try {
@@ -118,7 +130,20 @@ const handlePageChange = async (newPage: number) => {
   }
 };
 
+const shelfBookIds = computed(() => {
+  return new Set(shelfBooks.value.map((shelfBook) => shelfBook.book.id));
+});
+
+const isBookAddedToShelf = (bookId: number) => {
+  return shelfBookIds.value.has(bookId);
+};
+
+const handleBookAdded = () => {
+  fetchShelfBooks();
+};
+
 onMounted(() => {
+  fetchShelfBooks();
   fetchAllBooks();
 });
 </script>
@@ -201,7 +226,11 @@ onMounted(() => {
             :md="8"
             :lg="6"
           >
-            <BookCard :book="book" />
+            <BookCard
+              :book="book"
+              :is-added-to-shelf="isBookAddedToShelf(book.id)"
+              @added="handleBookAdded"
+            />
           </a-col>
         </a-row>
 
