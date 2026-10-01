@@ -2,9 +2,12 @@
 import { computed, onMounted, ref } from "vue";
 
 import type { ReadingStatus, ShelfBook } from "../types/shelf-book";
-import { getShelfBooks, updateProgress } from "../services/shelf-book.api";
+import { getShelfBooks, updateNote, updateProgress, updateRating } from "../services/shelf-book.api";
 import { message } from "ant-design-vue";
 import ShelfBookCard from "../components/shelf/ShelfBookCard.vue";
+import UpdateProgressModal from "../components/shelf/UpdateProgressModal.vue";
+import RatingModal from "../components/shelf/RatingModal.vue";
+import NoteModal from "../components/shelf/NoteModal.vue";
 
 const shelfBooks = ref<ShelfBook[]>([]);
 
@@ -61,9 +64,10 @@ const completedCount = computed(
 );
 
 const openProgressModal = (shelfBook: ShelfBook) => {
-  selectedShelfBook.value = shelfBook;
 
+  selectedShelfBook.value = shelfBook;
   progressModalOpen.value = true;
+
 };
 
 const closeProgressModal = () => {
@@ -103,6 +107,128 @@ const handleUpdateProgress = async (currentPage: number) => {
   }
 };
 
+const openRatingModal = (
+  shelfBook: ShelfBook,
+) => {
+  selectedShelfBook.value =
+    shelfBook;
+
+  ratingModalOpen.value =
+    true;
+};
+
+const handleUpdateRating = async (
+  rating: number | null,
+) => {
+  if (!selectedShelfBook.value) {
+    return;
+  }
+
+  try {
+    actionLoading.value = true;
+
+    const updated =
+      await updateRating(
+        selectedShelfBook.value.id,
+        rating,
+      );
+
+    const index =
+      shelfBooks.value.findIndex(
+        (item) =>
+          item.id ===
+          updated.id,
+      );
+
+    if (index !== -1) {
+      shelfBooks.value[index] =
+        updated;
+    }
+
+    message.success(
+      "Rating updated.",
+    );
+
+    ratingModalOpen.value =
+      false;
+
+    selectedShelfBook.value =
+      null;
+  } catch (error) {
+    console.error(
+      "Update rating error:",
+      error,
+    );
+
+    message.error(
+      "Failed to update rating.",
+    );
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
+const openNoteModal = (
+  shelfBook: ShelfBook,
+) => {
+  selectedShelfBook.value =
+    shelfBook;
+
+  noteModalOpen.value =
+    true;
+};
+
+const handleUpdateNote = async (
+  note: string | null,
+) => {
+  if (!selectedShelfBook.value) {
+    return;
+  }
+
+  try {
+    actionLoading.value = true;
+
+    const updated =
+      await updateNote(
+        selectedShelfBook.value.id,
+        note,
+      );
+
+    const index =
+      shelfBooks.value.findIndex(
+        (item) =>
+          item.id ===
+          updated.id,
+      );
+
+    if (index !== -1) {
+      shelfBooks.value[index] =
+        updated;
+    }
+
+    message.success(
+      "Note updated.",
+    );
+
+    noteModalOpen.value =
+      false;
+
+    selectedShelfBook.value =
+      null;
+  } catch (error) {
+    console.error(
+      "Update note error:",
+      error,
+    );
+
+    message.error(
+      "Failed to update note.",
+    );
+  } finally {
+    actionLoading.value = false;
+  }
+};
+
 
 
 onMounted(() => fetchShelfBooks());
@@ -110,81 +236,148 @@ onMounted(() => fetchShelfBooks());
 
 <template>
   <div class="my-shelf">
+
     <div class="my-shelf__header">
       <div>
-        <h1>My Library</h1>
+        <h1>My Shelf</h1>
 
-        <p>Track your reading journey</p>
+        <p>
+          Track your reading journey
+        </p>
       </div>
     </div>
 
     <div class="status-tabs">
+
       <a-button
-        :type="activeStatus === 'ALL' ? 'primary' : 'default'"
-        @click="activeStatus = 'ALL'"
+        :type="
+          activeStatus === 'ALL'
+            ? 'primary'
+            : 'default'
+        "
+        @click="
+          activeStatus = 'ALL'
+        "
       >
-        All ({{ allCount }})
+        All
+        ({{ allCount }})
       </a-button>
 
       <a-button
-        :type="activeStatus === 'WANT_TO_READ' ? 'primary' : 'default'"
-        @click="activeStatus = 'WANT_TO_READ'"
+        :type="
+          activeStatus ===
+          'WANT_TO_READ'
+            ? 'primary'
+            : 'default'
+        "
+        @click="
+          activeStatus =
+            'WANT_TO_READ'
+        "
       >
-        Want to Read ({{ wantToReadCount }})
+        Want to Read
+        ({{ wantToReadCount }})
       </a-button>
 
       <a-button
-        :type="activeStatus === 'READING' ? 'primary' : 'default'"
-        @click="activeStatus = 'READING'"
+        :type="
+          activeStatus === 'READING'
+            ? 'primary'
+            : 'default'
+        "
+        @click="
+          activeStatus = 'READING'
+        "
       >
-        Reading ({{ readingCount }})
+        Reading
+        ({{ readingCount }})
       </a-button>
 
       <a-button
-        :type="activeStatus === 'COMPLETED' ? 'primary' : 'default'"
-        @click="activeStatus = 'COMPLETED'"
+        :type="
+          activeStatus ===
+          'COMPLETED'
+            ? 'primary'
+            : 'default'
+        "
+        @click="
+          activeStatus =
+            'COMPLETED'
+        "
       >
-        Completed ({{ completedCount }})
+        Completed
+        ({{ completedCount }})
       </a-button>
+
     </div>
 
-    
-
     <a-spin :spinning="loading">
-      <div v-if="filteredBooks.length" class="shelf-list">
+
+      <div
+        v-if="filteredBooks.length"
+        class="shelf-list"
+      >
+
         <ShelfBookCard
           v-for="shelfBook in filteredBooks"
           :key="shelfBook.id"
           :shelf-book="shelfBook"
-          @progress="openProgressModal"
-          
+          @progress="
+            openProgressModal
+          "
+          @rating="
+            openRatingModal
+          "
+          @note="
+            openNoteModal
+          "
         />
+
       </div>
 
-      <a-empty v-else description="Your shelf is empty" />
+      <a-empty
+        v-else
+        description="Your shelf is empty"
+      />
+
     </a-spin>
 
     <UpdateProgressModal
       :open="progressModalOpen"
       :shelf-book="selectedShelfBook"
       :loading="actionLoading"
-      @close="closeProgressModal"
-      @submit="handleUpdateProgress"
+      @close="
+        closeProgressModal
+      "
+      @submit="
+        handleUpdateProgress
+      "
     />
 
     <RatingModal
       :open="ratingModalOpen"
       :shelf-book="selectedShelfBook"
       :loading="actionLoading"
-      @close="ratingModalOpen = false"
+      @close="
+        ratingModalOpen = false
+      "
+      @submit="
+        handleUpdateRating
+      "
     />
 
     <NoteModal
       :open="noteModalOpen"
       :shelf-book="selectedShelfBook"
       :loading="actionLoading"
-      @close="noteModalOpen = false"
+      @close="
+        noteModalOpen = false
+      "
+      @submit="
+        handleUpdateNote
+      "
     />
+
   </div>
 </template>
 

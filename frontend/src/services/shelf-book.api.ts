@@ -40,3 +40,31 @@ export const updateProgress = async (
 
   return response.data.data;
 };
+
+export const updateRating = async (
+  shelfBookId: number,
+  rating: number | null,
+): Promise<ShelfBook> => {
+  const response = await api.patch(
+    `/shelf-books/${shelfBookId}/rating`,
+    {
+      rating,
+    },
+  );
+
+  return response.data.data;
+};
+
+export const updateNote = async (
+  shelfBookId: number,
+  note: string | null,
+): Promise<ShelfBook> => {
+  const response = await api.patch(
+    `/shelf-books/${shelfBookId}/note`,
+    {
+      note,
+    },
+  );
+
+  return response.data.data;
+};

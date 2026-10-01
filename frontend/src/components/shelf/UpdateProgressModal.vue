@@ -35,6 +35,7 @@ watch(
   },
 );
 
+
 const totalPages = computed(() => {
   return props.shelfBook?.book
     .numberOfPages ?? null;

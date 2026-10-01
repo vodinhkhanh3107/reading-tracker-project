@@ -3,6 +3,8 @@ import { getShelfBooksUsecase } from "../usecases/shelf-book/get-shelf-books.use
 import { addBookToShelfUsecase } from "../usecases/shelf-book/add-book-to-shelf.usecase";
 import { ReadingStatus } from "../entities/ShelfBook";
 import { updateProgressUseCase } from "../usecases/shelf-book/update-progress.usecase";
+import { updateRatingUseCase } from "../usecases/shelf-book/update-rating.usecase";
+import { updateNoteUseCase } from "../usecases/shelf-book/update-note.usecase";
 
 export const getShelfBooks = async (
   req: Request,
@@ -180,6 +182,134 @@ export const updateProgress = async (
       success: false,
       message:
         "Failed to update reading progress",
+    });
+  }
+};
+
+
+export const updateRating = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shelf book ID",
+      });
+    }
+
+    const rating =
+      req.body.rating === null
+        ? null
+        : Number(req.body.rating);
+
+    if (
+      rating !== null &&
+      !Number.isInteger(rating)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be an integer",
+      });
+    }
+
+    const shelfBook =
+      await updateRatingUseCase({
+        id,
+        rating,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Book rating updated successfully",
+      data: shelfBook,
+    });
+  } catch (error) {
+    console.error(
+      "Update rating error:",
+      error,
+    );
+
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "SHELF_BOOK_NOT_FOUND":
+          return res.status(404).json({
+            success: false,
+            message: "Shelf book not found",
+          });
+
+        case "INVALID_RATING":
+          return res.status(400).json({
+            success: false,
+            message:
+              "Rating must be between 1 and 5",
+          });
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to update book rating",
+    });
+  }
+};
+
+export const updateNote = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid shelf book ID",
+      });
+    }
+
+    const note =
+      req.body.note === null
+        ? null
+        : String(req.body.note);
+
+    const shelfBook =
+      await updateNoteUseCase({
+        id,
+        note,
+      });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Book note updated successfully",
+      data: shelfBook,
+    });
+  } catch (error) {
+    console.error(
+      "Update note error:",
+      error,
+    );
+
+    if (
+      error instanceof Error &&
+      error.message === "SHELF_BOOK_NOT_FOUND"
+    ) {
+      return res.status(404).json({
+        success: false,
+        message: "Shelf book not found",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to update book note",
     });
   }
 };
