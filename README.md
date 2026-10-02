@@ -41,7 +41,7 @@ Frontend gửi request tới Backend:
 GET /api/v1/books/search?q={keyword}&page={page}&limit={limit}
 ```
 
-Backend gọi Open Library API và chuẩn hóa dữ liệu trước khi trả về Frontend.
+Backend tìm kiếm trong dữ liệu sách đã lưu ở MySQL và trả kết quả đã chuẩn hóa cho Frontend. Open Library được sử dụng để lấy dữ liệu nguồn khi seed/import sách, không phải API mà Frontend gọi trực tiếp.
 
 ---
 
@@ -53,7 +53,7 @@ Người dùng có thể xem thông tin chi tiết của một tác phẩm.
 GET /api/v1/books/{workId}
 ```
 
-Thông tin có thể bao gồm:
+Backend lấy chi tiết sách từ dữ liệu đã lưu trong MySQL. Thông tin có thể bao gồm:
 
 * Tên sách.
 * Tác giả.
@@ -103,7 +103,7 @@ COMPLETED
 * Express.js
 * TypeScript
 * TypeORM
-* Axios (gọi Open Library API, nếu đang được sử dụng trong service)
+* Axios (gọi HTTP API khi cần)
 
 ### ORM
 
@@ -121,21 +121,19 @@ TypeORM được sử dụng để:
 
 * MySQL
 
-### External API
+### External Data Source
 
-* Open Library API
+* Open Library API — dùng để lấy dữ liệu sách khi seed/import dữ liệu.
 
-Các API bên ngoài được sử dụng:
+Các endpoint nguồn có thể được dùng trong seed:
 
 ```text
 GET https://openlibrary.org/search.json?q={keyword}&page={n}&limit=20
-
 GET https://openlibrary.org/works/{workId}.json
-
 GET https://covers.openlibrary.org/b/id/{coverId}-M.jpg
 ```
 
-Frontend **không gọi trực tiếp Open Library API**. Request được thực hiện thông qua Backend.
+Trong luồng runtime hiện tại, Frontend gọi Backend; Backend truy vấn dữ liệu sách đã lưu trong MySQL. Open Library không phải dependency bắt buộc cho mỗi request tìm kiếm/chi tiết sách.
 
 ---
 
@@ -325,14 +323,16 @@ Book Route
 Book Controller
  │
  ▼
-Open Library Service
- │
- │ HTTP Request
- ▼
-Open Library API
+Book Use Case / Service
  │
  ▼
-Service xử lý dữ liệu
+Book Repository
+ │
+ ▼
+TypeORM
+ │
+ ▼
+MySQL
  │
  ▼
 Controller
@@ -486,7 +486,8 @@ Các business rules chính:
 
 ---
 
-# 9. 🚀 Local Development By Docker
+# 9. 🚀 Chạy local bằng Docker sau khi clone
+
 ### 6.1. Yêu cầu
 
 -   Git
@@ -545,6 +546,140 @@ không đặt mật khẩu thật trong file này.
 Docker Compose dùng các biến trên để khởi tạo MySQL. Với volume database
 đã được khởi tạo từ trước, thay đổi các biến trong `.env` không tự đổi
 mật khẩu/tài khoản bên trong MySQL.
+
+### 6.4. Kiểm tra cấu hình Docker
+
+``` bash
+docker compose config
+```
+
+Nếu báo thiếu biến `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`
+hoặc `MYSQL_PASSWORD`, hãy kiểm tra: - Bạn đang đứng đúng thư mục có
+`docker-compose.yml`. - File tên chính xác là `.env`, không phải
+`.env.txt`. - `.env` nằm cạnh `docker-compose.yml`. - Các biến bắt buộc
+có giá trị.
+
+### 6.5. Khởi động toàn bộ ứng dụng
+
+``` bash
+docker compose up --build
+```
+
+Lệnh này build image và chạy các service theo thứ tự phụ thuộc được cấu
+hình trong Compose. Nếu muốn chạy nền:
+
+``` bash
+docker compose up --build -d
+```
+
+Với cấu hình hiện tại, các địa chỉ là:
+
+  Thành phần                             Địa chỉ
+  -------------------------------------- ------------------------------
+  Frontend                               http://localhost:5173
+  Backend API base                       http://localhost:5000/api/v1
+  MySQL từ máy host                      `localhost:3307`
+  MySQL từ backend/migration container   `mysql:3306`
+
+Frontend cần dùng biến `VITE_API_BASE_URL=http://localhost:5000/api/v1`.
+Trong Docker Compose, backend/migration cần dùng `DB_HOST=mysql`,
+`DB_PORT=3306`, `DB_USER`, `DB_PASSWORD` và `DB_NAME`.
+
+### 6.6. Migration database
+
+Service `migrate` chạy lệnh:
+
+``` bash
+npm run migration:run
+```
+
+Backend được cấu hình chờ migration hoàn tất thành công trước khi khởi
+động. Dự án dùng `synchronize: false`, vì vậy bảng database phải được
+tạo bằng migration đã commit trong `backend/src/migrations/`.
+
+**Trước khi push repository**, hãy bảo đảm các migration không tạo trùng
+bảng. Chỉ nên có một migration khởi tạo schema; migration tiếp theo chỉ
+chứa thay đổi schema mới. Nếu hai migration cùng tạo `books` hoặc
+`shelf_books`, service `migrate` sẽ thất bại với lỗi
+`Table already exists`.
+
+Nếu migration lỗi, xem log:
+
+``` bash
+docker compose logs --no-color migrate
+```
+
+Sau khi sửa migration, chạy lại:
+
+``` bash
+docker compose run --rm migrate
+docker compose up --build
+```
+
+Không xóa volume database chỉ để xử lý lỗi migration nếu bạn cần giữ dữ
+liệu.
+
+### 6.7. Nạp dữ liệu mẫu (nếu cần)
+
+Seed không tự chạy mỗi lần khởi động. Sau khi migration thành công, chạy
+thủ công:
+
+``` bash
+docker compose run --rm backend npm run seed
+```
+
+Chỉ chạy seed khi bạn muốn nạp dữ liệu mẫu. Nếu seed không hỗ trợ chạy
+nhiều lần an toàn, tránh chạy lặp lại để không tạo dữ liệu trùng.
+
+### 6.8. Các lệnh Docker thường dùng
+
+``` bash
+# Xem trạng thái container
+docker compose ps -a
+
+# Xem log tất cả service
+docker compose logs -f
+
+# Xem log backend
+docker compose logs -f backend
+
+# Xem log migration
+docker compose logs --no-color migrate
+
+# Dừng container, giữ nguyên dữ liệu MySQL
+docker compose down
+
+# Build lại image và khởi động
+docker compose up --build
+```
+
+`docker compose down` giữ lại named volume `mysql_data`. **Không chạy
+`docker compose down -v` nếu muốn giữ dữ liệu**, vì `-v` sẽ xóa volume
+được Compose quản lý.
+
+### 6.9. Khắc phục sự cố thường gặp
+
+**MySQL báo
+`Database is uninitialized and password option is not specified`** -
+Kiểm tra `.env` ở thư mục gốc và xác nhận `MYSQL_ROOT_PASSWORD` có giá
+trị. - Chạy `docker compose config` để kiểm tra nội suy biến môi trường.
+
+**Migration báo `Table 'shelf_books' already exists`** - Kiểm tra log để
+biết migration nào đã chạy thành công và migration nào tạo trùng bảng. -
+Đối chiếu các file trong `backend/src/migrations/`; không để hai
+migration khởi tạo cùng một schema. - Không xóa volume như bước xử lý
+đầu tiên.
+
+**Backend không khởi động** - Xem
+`docker compose logs --no-color backend`. - Xác nhận Express lắng nghe
+trên `process.env.PORT` và địa chỉ `0.0.0.0` bên trong container. - Xác
+nhận biến DB trong container khớp với `database.ts`: `DB_HOST`,
+`DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`.
+
+**Port đã được sử dụng** - Nếu port `5173`, `5000` hoặc `3307` đang được
+ứng dụng khác sử dụng, hãy dừng ứng dụng đó hoặc đổi port bên trái trong
+phần `ports` của `docker-compose.yml`. - Với cấu hình `"3307:3306"`,
+MySQL vẫn nghe ở port `3306` bên trong container.
 
 
 
@@ -636,174 +771,168 @@ MySQL
 
 # 12. 🌐 Deployment
 
-Project cần deploy đầy đủ:
+## 12.1. Nền tảng production
 
-```text
-Frontend
-Backend
-Database
+Dự án hiện được triển khai bằng các dịch vụ sau:
+
+| Thành phần | Nền tảng | URL / cấu hình |
+|---|---|---|
+| Frontend | Vercel | https://reading-tracker-project.vercel.app |
+| Backend API | Render | https://reading-tracker-project.onrender.com |
+| Database | Aiven MySQL | Database cloud; tên database hiện dùng là `defaultdb` |
+
+Frontend gọi Backend qua HTTPS. Backend kết nối đến Aiven MySQL bằng các biến môi trường; không đưa thông tin kết nối database vào Frontend.
+
+## 12.2. Deploy database — Aiven MySQL
+
+1. Tạo/chọn dịch vụ MySQL trong Aiven.
+2. Lấy hostname, port, username, password và database name từ phần connection information.
+3. Kết nối bằng MySQL Workbench hoặc công cụ SQL tương đương.
+4. Bật TLS/SSL theo yêu cầu kết nối của Aiven.
+5. Kiểm tra database đích:
+
+```sql
+SELECT DATABASE();
+SHOW TABLES;
 ```
 
-Ứng dụng production phải truy cập được thông qua HTTPS.
+Database cần có schema được tạo từ các migration đã commit trong `backend/src/migrations/`. Dự án sử dụng `synchronize: false`, vì vậy không dựa vào TypeORM tự tạo bảng lúc khởi động.
 
-Theo yêu cầu của bài test, README cần mô tả nền tảng deploy và các bước cấu hình.
+## 12.3. Deploy backend — Render
 
-## 12.1. Frontend Deployment
-
-**Platform:** `[Điền platform thực tế]`
-
-**URL:** `https://...`
-
-Các bước:
-
-1. Push source code lên GitHub/GitLab.
-2. Kết nối repository với nền tảng deploy.
-3. Chọn thư mục `frontend` nếu project là monorepo.
-4. Cài dependencies:
-
-```bash
-npm install
-```
-
-5. Build:
-
-```bash
-npm run build
-```
-
-6. Cấu hình Backend URL:
-
-```env
-VITE_API_URL=https://<BACKEND_URL>/api
-```
-
-7. Deploy Frontend.
-8. Truy cập URL production để kiểm tra.
-
----
-
-## 12.2. Backend Deployment
-
-**Platform:** `[Điền platform thực tế]`
-
-**URL:** `https://...`
-
-Backend sử dụng:
-
-```text
-Node.js
-Express
-TypeScript
-TypeORM
-MySQL
-```
-
-### Build Backend
-
-Trước khi chạy production, compile TypeScript:
-
-```bash
-npm run build
-```
-
-Kết quả:
-
-```text
-src/
-   ↓
-TypeScript Compiler
-   ↓
-dist/
-```
-
-Sau đó chạy:
-
-```bash
-npm run start
-```
+**Service:** `reading-tracker-project`  
+**URL:** `https://reading-tracker-project.onrender.com`
 
 ### Environment Variables
 
-Cấu hình trên nền tảng deploy:
+Cấu hình trong Render Dashboard → Web Service → Environment:
 
 ```env
-PORT=5000
-
-DB_HOST=<DATABASE_HOST>
-DB_PORT=<DATABASE_PORT>
-DB_USER=<DATABASE_USER>
-DB_PASSWORD=<DATABASE_PASSWORD>
-DB_NAME=<DATABASE_NAME>
-
-OPEN_LIBRARY_BASE_URL=https://openlibrary.org
+DB_HOST=<AIVEN_HOST>
+DB_PORT=<AIVEN_PORT>
+DB_USER=<AIVEN_USER>
+DB_PASSWORD=<AIVEN_PASSWORD>
+DB_NAME=defaultdb
+FRONTEND_URL=https://reading-tracker-project.vercel.app
 ```
 
-Không commit `.env` vào repository.
+Render tự cung cấp biến `PORT` cho Web Service; backend cần lắng nghe trên `process.env.PORT`. Không commit password hoặc file `.env` lên Git.
 
----
+### Build Command và Start Command
 
-## 12.3. Database Deployment
+Vì Pre-Deploy Command không khả dụng trong cấu hình Render hiện tại, migration được chạy trong Build Command. Với Root Directory đặt là `backend`, cấu hình triển khai là:
 
-**Platform:** `[Điền platform thực tế]`
+**Build Command**
 
-Database sử dụng:
-
-```text
-MySQL
+```bash
+npm install --include=dev && npm run build && npm run migration:run
 ```
 
-Cần cấu hình:
+**Start Command**
 
-```text
-DB_HOST
-DB_PORT
-DB_USER
-DB_PASSWORD
-DB_NAME
+```bash
+npm start
 ```
 
-Backend sử dụng TypeORM để kết nối tới MySQL.
+`npm run migration:run` phải trỏ đến đúng `src/config/database.ts` và dùng các biến môi trường Aiven. Trước khi deploy, xác nhận script `migration:run` gọi đúng lệnh TypeORM `migration:run` (không phải `migration:run-d`).
 
-Database credentials phải được lưu trong environment variables.
+Build Command chạy migration trước khi Render khởi động phiên bản backend mới. Nếu migration thất bại, kiểm tra build logs và không bỏ qua lỗi. Không tạo migration mới chỉ để xử lý lỗi kết nối; trước tiên xác minh database đích và trạng thái migration.
 
----
+### CORS
 
-## 12.4. Deployment Flow
+Backend cho phép frontend production qua biến `FRONTEND_URL`:
 
 ```text
-GitHub
-  │
-  ├───────────────┐
-  ▼               ▼
-Frontend        Backend
-  │               │
-  │               ├── TypeScript Build
-  │               │
-  │               ├── TypeORM
-  │               │
-  │               ▼
-  │             MySQL
-  │
-  ▼
-Production
+https://reading-tracker-project.vercel.app
 ```
 
-Backend:
+Origin phải khớp chính xác, không thêm dấu `/` cuối. Khi đổi domain Vercel, cập nhật biến này và deploy lại backend. CORS chỉ kiểm soát trình duyệt có được đọc response hay không; nó không thay thế authentication/authorization.
+
+### Kiểm tra backend sau deploy
+
+Health endpoint:
 
 ```text
-Source Code
-    ↓
+https://reading-tracker-project.onrender.com/health
+```
+
+API dashboard:
+
+```text
+https://reading-tracker-project.onrender.com/api/v1/dashboard
+```
+
+Nếu API trả HTTP 500, mở Render Logs và kiểm tra lỗi thực tế. Lỗi `Table doesn't exist` hoặc `Unknown column` thường liên quan đến schema/migration; lỗi CORS cần kiểm tra origin và response headers.
+
+## 12.4. Seed dữ liệu mẫu lên Aiven
+
+Migration chỉ tạo/cập nhật cấu trúc bảng; nó không tự thêm dữ liệu mẫu. Seed là thao tác riêng và không tự chạy mỗi lần deploy.
+
+Sau khi migration thành công, chạy seed từ thư mục `backend` trong terminal đã được cấu hình các biến `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` trỏ đến Aiven:
+
+```bash
+npm run seed
+```
+
+Trước khi chạy, kiểm tra `backend/src/seeds/index.ts` để biết seed có kiểm tra dữ liệu đã tồn tại hay không. Nếu seed chưa idempotent (chạy lặp an toàn), chỉ chạy một lần hoặc điều chỉnh seed để tránh dữ liệu trùng. Không chạy seed tự động mỗi lần deploy nếu chưa xác nhận hành vi đó.
+
+Sau khi seed, kết nối đến Aiven và kiểm tra dữ liệu, ví dụ:
+
+```sql
+SELECT COUNT(*) FROM books;
+SELECT COUNT(*) FROM shelf_books;
+```
+
+Nếu `shelf_books` chưa có dữ liệu mẫu, điều đó không nhất thiết là lỗi: seed có thể chỉ nạp dữ liệu sách vào `books`.
+
+## 12.5. Deploy frontend — Vercel
+
+**URL:** `https://reading-tracker-project.vercel.app`
+
+1. Push code lên repository Git.
+2. Kết nối repository với Vercel và chọn thư mục `frontend` làm Root Directory nếu đang deploy monorepo.
+3. Đặt biến môi trường production:
+
+```env
+VITE_API_BASE_URL=https://reading-tracker-project.onrender.com/api/v1
+```
+
+4. Build bằng lệnh của dự án:
+
+```bash
 npm install
-    ↓
 npm run build
-    ↓
-dist/
-    ↓
-npm run start
 ```
 
+5. Deploy frontend. Khi thay đổi `VITE_API_BASE_URL`, cần redeploy để giá trị được đưa vào bản build mới.
+6. Mở website production và kiểm tra API qua DevTools → Network.
+
+Không đặt password database hoặc secret trong biến `VITE_*`: các biến này được đóng gói vào code frontend và có thể được người dùng xem.
+
+## 12.6. Deployment Flow
+
+```text
+Push code lên Git
+       │
+       ├── Render backend
+       │      ├── Install dependencies
+       │      ├── Build / type-check TypeScript
+       │      ├── Chạy TypeORM migration trên Aiven
+       │      └── npm start
+       │
+       └── Vercel frontend
+              ├── Cấu hình VITE_API_BASE_URL
+              ├── npm run build
+              └── Deploy static frontend
+
+Aiven MySQL
+  └── Lưu schema và dữ liệu của ứng dụng
+```
+
+Thứ tự triển khai an toàn: kiểm tra Aiven và migration → deploy backend → seed dữ liệu mẫu nếu cần → deploy/kiểm tra frontend.
 
 
+---
 
 # 12. 🔐 Environment Variables
 
@@ -827,7 +956,7 @@ phải được cấu hình trực tiếp trên môi trường deploy.
 
 # 13. 🧪 Sample Data
 
-Project cần có dữ liệu mẫu để có thể kiểm tra ngay sau khi deploy.
+Có thể nạp dữ liệu mẫu bằng `npm run seed` sau khi migration thành công. Seed là bước riêng và không tự chạy mỗi lần deploy; cần xác nhận seed đã kết nối đúng Aiven và có cơ chế tránh dữ liệu trùng.
 
 Các trạng thái mẫu:
 
@@ -931,11 +1060,11 @@ reading-tracker/
 │   ├── .env.example
 │   └── package.json
 │
-├── docs/
-│   ├── screenshots/
-│   └── database/
-│
+└── .env.example
+└── .gitignore  
+└── docker-compose.yml
 └── README.md
+
 ```
 
 # 18. 📄 Notes
